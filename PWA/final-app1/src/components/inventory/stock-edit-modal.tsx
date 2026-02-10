@@ -38,76 +38,104 @@ export function StockEditModal({
   const decrement = () => setQuantity((q) => Math.max(0, q - 1));
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>在庫数を編集</CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-md bg-white shadow-2xl border-2 border-gray-200">
+        <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-t-lg pb-4">
+          <CardTitle className="text-white font-bold">在庫数を編集</CardTitle>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onClose}
+            className="text-white hover:bg-white/20 rounded-full"
+          >
             <X className="w-5 h-5" />
           </Button>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 bg-white p-6">
           {/* 商品情報 */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="font-medium">{product.商品名}</div>
-            <div className="text-sm text-gray-500 mt-1">
-              サイズ: {product.サイズ} | JAN: {product.JANコード}
-            </div>
-            <div className="text-sm text-gray-500">
-              価格: ¥{product.税込価格.toLocaleString()}（税込）
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-5 shadow-sm">
+            <div className="font-bold text-gray-900 text-lg">{product.商品名}</div>
+            <div className="text-sm text-gray-600 mt-2 space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">サイズ:</span>
+                <span className="bg-white px-2 py-0.5 rounded border border-gray-300">{product.サイズ}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">JAN:</span>
+                <span className="font-mono text-xs bg-white px-2 py-0.5 rounded border border-gray-300">{product.JANコード}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">価格:</span>
+                <span className="text-emerald-700 font-bold">¥{product.税込価格.toLocaleString()}</span>
+                <span className="text-xs text-gray-500">（税込）</span>
+              </div>
             </div>
           </div>
 
           {/* 在庫数入力 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-3">
               在庫数
             </label>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center gap-4">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={decrement}
                 disabled={quantity <= 0}
+                className="h-12 w-12 rounded-full border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 disabled:opacity-30"
               >
-                <Minus className="w-4 h-4" />
+                <Minus className="w-5 h-5" />
               </Button>
               <Input
+                id="stock-quantity"
+                name="quantity"
                 type="number"
                 value={quantity}
                 onChange={(e) =>
                   setQuantity(Math.max(0, parseInt(e.target.value) || 0))
                 }
-                className="text-center text-xl font-bold w-24"
+                className="text-center text-3xl font-bold w-32 h-16 border-2 border-gray-300 rounded-xl shadow-inner"
                 min={0}
               />
-              <Button variant="outline" size="icon" onClick={increment}>
-                <Plus className="w-4 h-4" />
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={increment}
+                className="h-12 w-12 rounded-full border-2 border-gray-300 hover:border-green-500 hover:bg-green-50"
+              >
+                <Plus className="w-5 h-5" />
               </Button>
             </div>
-            <div className="text-sm text-gray-500 mt-2 text-center">
-              現在の在庫: {product.stock?.在庫数 || 0} →{" "}
-              <span className="font-medium">{quantity}</span>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+              <p className="text-sm text-blue-800 text-center font-medium">
+                現在の在庫: <span className="font-bold">{product.stock?.在庫数 || 0}</span> 
+                <span className="mx-2">→</span>
+                <span className="font-bold text-blue-600 text-lg">{quantity}</span>
+              </p>
             </div>
           </div>
 
           {/* アクションボタン */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 pt-2">
             <Button
               variant="outline"
-              className="flex-1"
+              className="flex-1 h-12 border-2 border-gray-300 hover:bg-gray-100 font-semibold"
               onClick={onClose}
               disabled={isLoading}
             >
               キャンセル
             </Button>
             <Button
-              className="flex-1"
+              className="flex-1 h-12 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold shadow-lg"
               onClick={handleSave}
               disabled={isLoading}
             >
               {isLoading ? (
-                "保存中..."
+                <span className="flex items-center gap-2">
+                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                  保存中...
+                </span>
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />

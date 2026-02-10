@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSheetData, SHEET_NAMES } from "@/lib/sheets";
+import { supabaseServer } from "@/lib/supabase-server";
 import type { Product } from "@/types";
 
 /**
@@ -36,23 +36,28 @@ export async function GET(request: Request) {
         ",サンプル商品,,M,SKU-001,4500000000002,1000,1100",
       ].join("\n");
     } else {
-      // 現在のデータをエクスポート
-      const productsRaw = await getSheetData(SHEET_NAMES.PRODUCTS);
+      // Supabaseから現在のデータをエクスポート
+      const { data: productsData, error: productsError } = await supabaseServer
+        .from('products')
+        .select('*')
+        .order('id', { ascending: true });
 
-      const products: Product[] = productsRaw
-        .filter((p) => p["商品ID"])
-        .map((p) => ({
-          商品ID: Number(p["商品ID"]),
-          商品名: String(p["商品名"] || ""),
-          画像URL: String(p["画像URL"] || ""),
-          サイズ: String(p["サイズ"] || ""),
-          商品コード: String(p["商品コード"] || ""),
-          JANコード: String(p["JANコード"] || ""),
-          税抜価格: Number(p["税抜価格"]) || 0,
-          税込価格: Number(p["税込価格"]) || 0,
-          作成日: String(p["作成日"] || ""),
-          更新日: String(p["更新日"] || ""),
-        }));
+      if (productsError) {
+        throw productsError;
+      }
+
+      const products: Product[] = (productsData || []).map((p) => ({
+        商品ID: p.id,
+        商品名: p.name,
+        画像URL: p.image_url || "",
+        サイズ: p.size,
+        商品コード: p.product_code,
+        JANコード: p.jan_code,
+        税抜価格: p.price_excluding_tax,
+        税込価格: p.price_including_tax,
+        作成日: p.created_at,
+        更新日: p.updated_at,
+      }));
 
       const rows = products.map((p) =>
         [

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { getSheetData, appendSheetData, updateSheetData, SHEET_NAMES } from "@/lib/sheets";
+import { supabaseServer } from "@/lib/supabase-server";
+import { validateSession, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
+import { validateProduct, validateFileSize, sanitizeString } from "@/lib/validation";
 
 interface CsvProduct {
   商品ID?: number;
@@ -25,6 +27,18 @@ interface ValidationError {
  * リクエストボディ: FormData (file: CSV file)
  */
 export async function POST(request: Request) {
+  // セッション検証
+  const authResult = await validateSession();
+  if (!authResult.valid) {
+    return authResult.response;
+  }
+
+  // レート制限チェック（CSV アップロードは厳しく制限）
+  const rateLimit = checkRateLimit(`csv-upload-${authResult.user.email}`, 5, 60000);
+  if (!rateLimit.allowed) {
+    return rateLimitResponse(rateLimit.resetTime);
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -32,6 +46,23 @@ export async function POST(request: Request) {
     if (!file) {
       return NextResponse.json(
         { success: false, error: "ファイルが選択されていません" },
+        { status: 400 }
+      );
+    }
+
+    // ファイルサイズ検証（5MB制限）
+    const sizeCheck = validateFileSize(file.size, 5);
+    if (!sizeCheck.valid) {
+      return NextResponse.json(
+        { success: false, error: sizeCheck.error },
+        { status: 400 }
+      );
+    }
+
+    // ファイルタイプ検証
+    if (!file.name.endsWith(".csv")) {
+      return NextResponse.json(
+        { success: false, error: "CSVファイルのみアップロード可能です" },
         { status: 400 }
       );
     }
@@ -79,6 +110,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // 行数制限チェック（最大1000行）
+    if (lines.length > 1001) {
+      return NextResponse.json(
+        { success: false, error: "CSVファイルの行数が多すぎます（最大1000行）" },
+        { status: 400 }
+      );
+    }
+
     // データ行をパース
     const products: CsvProduct[] = [];
     const errors: ValidationError[] = [];
@@ -114,16 +153,26 @@ export async function POST(request: Request) {
       }
 
       if (errors.filter((e) => e.row === rowNum).length === 0) {
-        products.push({
+        const product = {
           商品ID: row["商品ID"] ? Number(row["商品ID"]) : undefined,
-          商品名: row["商品名"].trim(),
-          画像URL: row["画像URL"]?.trim() || "",
-          サイズ: row["サイズ"].trim(),
-          商品コード: row["商品コード"].trim(),
-          JANコード: row["JANコード"].trim(),
+          商品名: sanitizeString(row["商品名"]),
+          画像URL: sanitizeString(row["画像URL"] || ""),
+          サイズ: sanitizeString(row["サイズ"]),
+          商品コード: sanitizeString(row["商品コード"]),
+          JANコード: sanitizeString(row["JANコード"]),
           税抜価格: Number(row["税抜価格"]),
           税込価格: Number(row["税込価格"]),
-        });
+        };
+
+        // 商品データの詳細検証
+        const productValidation = validateProduct(product);
+        if (!productValidation.valid) {
+          productValidation.errors.forEach((err) => {
+            errors.push({ row: rowNum, field: "商品データ", message: err });
+          });
+        } else {
+          products.push(product);
+        }
       }
     }
 
@@ -138,73 +187,60 @@ export async function POST(request: Request) {
       );
     }
 
-    // 既存データを取得
-    const existingData = await getSheetData(SHEET_NAMES.PRODUCTS);
-    const existingProducts = existingData.filter((p) => p["商品ID"]);
-
-    // 最大IDを取得
-    let maxId = Math.max(
-      0,
-      ...existingProducts.map((p) => Number(p["商品ID"]) || 0)
-    );
-
-    const now = new Date().toISOString();
+    // Supabaseで商品データをupsert（存在すれば更新、なければ挿入）
     let updatedCount = 0;
     let addedCount = 0;
 
     for (const product of products) {
       if (product.商品ID) {
         // 既存商品の更新
-        const rowIndex = existingProducts.findIndex(
-          (p) => Number(p["商品ID"]) === product.商品ID
-        );
+        const { data, error } = await supabaseServer
+          .from('products')
+          .update({
+            name: product.商品名,
+            image_url: product.画像URL || null,
+            size: product.サイズ,
+            product_code: product.商品コード,
+            jan_code: product.JANコード,
+            price_excluding_tax: product.税抜価格,
+            price_including_tax: product.税込価格,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', product.商品ID)
+          .select();
 
-        if (rowIndex !== -1) {
-          const sheetRow = rowIndex + 2; // ヘッダー行 + 1-indexed
-          await updateSheetData(SHEET_NAMES.PRODUCTS, `A${sheetRow}:J${sheetRow}`, [
-            [
-              product.商品ID,
-              product.商品名,
-              product.画像URL || "",
-              product.サイズ,
-              product.商品コード,
-              product.JANコード,
-              product.税抜価格,
-              product.税込価格,
-              existingProducts[rowIndex]["作成日"] || now,
-              now,
-            ],
-          ]);
+        if (error) {
+          console.warn(`商品ID ${product.商品ID} の更新に失敗:`, error);
+        } else if (data && data.length > 0) {
           updatedCount++;
         }
       } else {
         // 新規商品の追加
-        maxId++;
-        await appendSheetData(SHEET_NAMES.PRODUCTS, [
-          [
-            maxId,
-            product.商品名,
-            product.画像URL || "",
-            product.サイズ,
-            product.商品コード,
-            product.JANコード,
-            product.税抜価格,
-            product.税込価格,
-            now,
-            now,
-          ],
-        ]);
+        const { data: newProduct, error: productError } = await supabaseServer
+          .from('products')
+          .insert({
+            name: product.商品名,
+            image_url: product.画像URL || null,
+            size: product.サイズ,
+            product_code: product.商品コード,
+            jan_code: product.JANコード,
+            price_excluding_tax: product.税抜価格,
+            price_including_tax: product.税込価格,
+          })
+          .select()
+          .single();
+
+        if (productError || !newProduct) {
+          console.warn(`商品の追加に失敗:`, productError);
+          continue;
+        }
 
         // 在庫情報も初期化
-        const stockData = await getSheetData(SHEET_NAMES.STOCK);
-        const maxStockId = Math.max(
-          0,
-          ...stockData.filter((s) => s["在庫ID"]).map((s) => Number(s["在庫ID"]) || 0)
-        );
-
-        await appendSheetData(SHEET_NAMES.STOCK, [
-          [maxStockId + 1, maxId, 0, "", now, now],
-        ]);
+        await supabaseServer.from('stock').insert({
+          product_id: newProduct.id,
+          quantity: 0,
+          last_stocked_date: null,
+        });
 
         addedCount++;
       }
@@ -217,13 +253,8 @@ export async function POST(request: Request) {
       updated: updatedCount,
     });
   } catch (error) {
-    console.error("CSV Upload Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
-    return NextResponse.json(
-      { success: false, error: errorMessage },
-      { status: 500 }
-    );
+    const { errorResponse } = await import("@/lib/error-handler");
+    return errorResponse(error, "CSVのアップロードに失敗しました");
   }
 }
 

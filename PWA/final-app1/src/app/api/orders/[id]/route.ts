@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSheetData, SHEET_NAMES } from "@/lib/sheets";
+import { supabaseServer } from "@/lib/supabase-server";
 import type { Order, OrderDetail, Product, OrderWithDetails } from "@/types";
 
 /**
@@ -21,69 +21,64 @@ export async function GET(
       );
     }
 
-    // 注文情報を取得
-    const ordersRaw = await getSheetData(SHEET_NAMES.ORDERS);
-    const detailsRaw = await getSheetData(SHEET_NAMES.ORDER_DETAILS);
-    const productsRaw = await getSheetData(SHEET_NAMES.PRODUCTS);
+    // Supabaseから注文と注文詳細を取得（JOINで一度に取得）
+    const { data: orderData, error: orderError } = await supabaseServer
+      .from('orders')
+      .select(`
+        *,
+        order_details (
+          *,
+          products (*)
+        )
+      `)
+      .eq('id', orderId)
+      .single();
 
-    // 注文を検索
-    const orderRaw = ordersRaw.find(
-      (o) => Number(o["注文ID"]) === orderId
-    );
-
-    if (!orderRaw) {
+    if (orderError || !orderData) {
       return NextResponse.json(
         { success: false, error: "注文が見つかりません" },
         { status: 404 }
       );
     }
 
-    // 注文情報を型変換
+    // 型変換（Supabase → 既存の型）
     const order: Order = {
-      注文ID: Number(orderRaw["注文ID"]),
-      商品数: Number(orderRaw["商品数"]) || 0,
-      "注文金額(税抜)": Number(String(orderRaw["注文金額(税抜)"]).replace(/[¥,]/g, "")) || 0,
-      "注文金額(税込)": Number(String(orderRaw["注文金額(税込)"]).replace(/[¥,]/g, "")) || 0,
-      注文日: String(orderRaw["注文日"] || ""),
+      注文ID: orderData.id,
+      商品数: orderData.item_count,
+      "注文金額(税抜)": orderData.total_price_excluding_tax,
+      "注文金額(税込)": orderData.total_price_including_tax,
+      注文日: orderData.order_date,
     };
 
-    // 注文詳細を取得
-    const orderDetails: (OrderDetail & { product?: Product })[] = detailsRaw
-      .filter((d) => Number(d["注文ID"]) === orderId)
-      .map((d) => {
-        const productRaw = productsRaw.find(
-          (p) => Number(p["商品ID"]) === Number(d["商品ID"])
-        );
+    // 注文詳細を型変換
+    const orderDetails: (OrderDetail & { product?: Product })[] = (orderData.order_details || []).map((d: any) => {
+      const product: Product | undefined = d.products ? {
+        商品ID: d.products.id,
+        商品名: d.products.name,
+        画像URL: d.products.image_url || "",
+        サイズ: d.products.size,
+        商品コード: d.products.product_code,
+        JANコード: d.products.jan_code,
+        税抜価格: d.products.price_excluding_tax,
+        税込価格: d.products.price_including_tax,
+        作成日: d.products.created_at,
+        更新日: d.products.updated_at,
+      } : undefined;
 
-        const product: Product | undefined = productRaw
-          ? {
-              商品ID: Number(productRaw["商品ID"]),
-              商品名: String(productRaw["商品名"] || ""),
-              画像URL: String(productRaw["画像URL"] || ""),
-              サイズ: String(productRaw["サイズ"] || ""),
-              商品コード: String(productRaw["商品コード"] || ""),
-              JANコード: String(productRaw["JANコード"] || ""),
-              税抜価格: Number(productRaw["税抜価格"]) || 0,
-              税込価格: Number(productRaw["税込価格"]) || 0,
-              作成日: String(productRaw["作成日"] || ""),
-              更新日: String(productRaw["更新日"] || ""),
-            }
-          : undefined;
-
-        return {
-          明細ID: Number(d["明細ID"]),
-          注文ID: Number(d["注文ID"]),
-          商品ID: Number(d["商品ID"]),
-          数量: Number(d["数量"]) || 0,
-          "単価(税抜)": Number(String(d["単価(税抜)"]).replace(/[¥,]/g, "")) || 0,
-          "単価(税込)": Number(String(d["単価(税込)"]).replace(/[¥,]/g, "")) || 0,
-          "小計(税抜)": Number(String(d["小計(税抜)"]).replace(/[¥,]/g, "")) || 0,
-          "小計(税込)": Number(String(d["小計(税込)"]).replace(/[¥,]/g, "")) || 0,
-          作成日: String(d["作成日"] || ""),
-          更新日: String(d["更新日"] || ""),
-          product,
-        };
-      });
+      return {
+        明細ID: d.id,
+        注文ID: d.order_id,
+        商品ID: d.product_id,
+        数量: d.quantity,
+        "単価(税抜)": d.unit_price_excluding_tax,
+        "単価(税込)": d.unit_price_including_tax,
+        "小計(税抜)": d.subtotal_excluding_tax,
+        "小計(税込)": d.subtotal_including_tax,
+        作成日: d.created_at,
+        更新日: d.updated_at,
+        product,
+      };
+    });
 
     const orderWithDetails: OrderWithDetails = {
       ...order,

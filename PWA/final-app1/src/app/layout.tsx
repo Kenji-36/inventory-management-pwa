@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { SessionProvider } from "@/components/providers/session-provider";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { PWAProvider } from "@/components/providers/pwa-provider";
+import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -30,11 +32,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
+    <html lang="ja" data-scroll-behavior="smooth">
       <body className="antialiased">
-        <SessionProvider>
-          {children}
-        </SessionProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <PWAProvider>
+              {children}
+            </PWAProvider>
+          </AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );

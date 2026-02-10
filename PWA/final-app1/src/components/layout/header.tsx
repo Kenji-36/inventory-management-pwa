@@ -1,8 +1,7 @@
 "use client";
 
-import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { 
   LayoutDashboard, 
@@ -11,10 +10,13 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X
+  X,
+  Boxes
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 const navigation = [
   { name: "ダッシュボード", href: "/", icon: LayoutDashboard },
@@ -24,28 +26,51 @@ const navigation = [
 ];
 
 export function Header() {
-  const { data: session } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // 初期ユーザー取得
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+
+    // 認証状態の変更を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/login" });
+    await supabase.auth.signOut();
+    // Supabaseが自動的にCookieを削除
+    router.push("/login");
+    router.refresh();
   };
 
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+    <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 flex-shrink-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* ロゴ */}
-          <Link href="/" className="flex items-center space-x-2">
-            <Package className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-gray-900 hidden sm:block">
-              在庫管理システム
-            </span>
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-shadow">
+              <Boxes className="h-5 w-5 text-white" />
+            </div>
+            <div className="hidden sm:block">
+              <span className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                在庫管理
+              </span>
+              <span className="text-xs text-gray-400 block -mt-0.5">Inventory System</span>
+            </div>
           </Link>
 
           {/* デスクトップナビゲーション */}
-          <nav className="hidden md:flex items-center space-x-1">
+          <nav className="hidden md:flex items-center bg-gray-100/80 rounded-2xl p-1.5">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -53,13 +78,16 @@ export function Header() {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    "flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200",
                     isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      ? "bg-white text-primary shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
                   )}
                 >
-                  <item.icon className="h-4 w-4 mr-2" />
+                  <item.icon className={cn(
+                    "h-4 w-4 mr-2 transition-colors",
+                    isActive ? "text-primary" : "text-gray-400"
+                  )} />
                   {item.name}
                 </Link>
               );
@@ -67,18 +95,18 @@ export function Header() {
           </nav>
 
           {/* ユーザーメニュー */}
-          <div className="flex items-center space-x-4">
-            {session?.user && (
-              <div className="hidden sm:flex items-center space-x-3">
-                {session.user.image && (
+          <div className="flex items-center gap-3">
+            {user && (
+              <div className="hidden sm:flex items-center gap-3 bg-gray-100/80 rounded-2xl pl-2 pr-4 py-1.5">
+                {user.user_metadata?.avatar_url && (
                   <img
-                    src={session.user.image}
-                    alt={session.user.name || "User"}
-                    className="h-8 w-8 rounded-full"
+                    src={user.user_metadata.avatar_url}
+                    alt={user.user_metadata?.name || user.email || "User"}
+                    className="h-8 w-8 rounded-xl ring-2 ring-white"
                   />
                 )}
-                <span className="text-sm text-gray-700">
-                  {session.user.name}
+                <span className="text-sm font-medium text-gray-700">
+                  {user.user_metadata?.name || user.email}
                 </span>
               </div>
             )}
@@ -86,7 +114,7 @@ export function Header() {
               variant="ghost"
               size="sm"
               onClick={handleSignOut}
-              className="hidden sm:flex"
+              className="hidden sm:flex rounded-xl text-gray-500 hover:text-red-500 hover:bg-red-50"
             >
               <LogOut className="h-4 w-4 mr-2" />
               ログアウト
@@ -95,13 +123,13 @@ export function Header() {
             {/* モバイルメニューボタン */}
             <button
               type="button"
-              className="md:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100"
+              className="md:hidden w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? (
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5" />
               ) : (
-                <Menu className="h-6 w-6" />
+                <Menu className="h-5 w-5" />
               )}
             </button>
           </div>
@@ -109,8 +137,8 @@ export function Header() {
 
         {/* モバイルナビゲーション */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t">
-            <nav className="flex flex-col space-y-1">
+          <div className="md:hidden py-4 border-t border-gray-100 fade-in">
+            <nav className="flex flex-col gap-1">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -118,38 +146,46 @@ export function Header() {
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                      "flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all",
                       isActive
                         ? "bg-primary/10 text-primary"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        : "text-gray-600 hover:bg-gray-100"
                     )}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <item.icon className="h-4 w-4 mr-2" />
+                    <item.icon className={cn(
+                      "h-5 w-5 mr-3",
+                      isActive ? "text-primary" : "text-gray-400"
+                    )} />
                     {item.name}
                   </Link>
                 );
               })}
-              <hr className="my-2" />
-              {session?.user && (
-                <div className="flex items-center px-3 py-2 space-x-3">
-                  {session.user.image && (
+              <hr className="my-2 border-gray-100" />
+              {user && (
+                <div className="flex items-center px-4 py-3 gap-3">
+                  {user.user_metadata?.avatar_url && (
                     <img
-                      src={session.user.image}
-                      alt={session.user.name || "User"}
-                      className="h-8 w-8 rounded-full"
+                      src={user.user_metadata.avatar_url}
+                      alt={user.user_metadata?.name || user.email || "User"}
+                      className="h-10 w-10 rounded-xl"
                     />
                   )}
-                  <span className="text-sm text-gray-700">
-                    {session.user.name}
-                  </span>
+                  <div>
+                    <span className="text-sm font-medium text-gray-900 block">
+                      {user.user_metadata?.name || user.email}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {user.email}
+                    </span>
+                  </div>
                 </div>
               )}
               <button
                 onClick={handleSignOut}
-                className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
+                className="flex items-center px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 mt-1"
               >
-                <LogOut className="h-4 w-4 mr-2" />
+                <LogOut className="h-5 w-5 mr-3" />
                 ログアウト
               </button>
             </nav>

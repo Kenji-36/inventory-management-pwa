@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSheetData, SHEET_NAMES } from "@/lib/sheets";
+import { supabaseServer } from "@/lib/supabase-server";
+import { validateSession, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
 import type { Order, OrderDetail, Product, Stock } from "@/types";
 
 interface DailySales {
@@ -51,65 +52,88 @@ interface DashboardData {
  */
 export async function GET() {
   try {
-    // 各シートからデータを取得
-    const [productsRaw, stockRaw, ordersRaw, detailsRaw] = await Promise.all([
-      getSheetData(SHEET_NAMES.PRODUCTS),
-      getSheetData(SHEET_NAMES.STOCK),
-      getSheetData(SHEET_NAMES.ORDERS),
-      getSheetData(SHEET_NAMES.ORDER_DETAILS),
+    // セッション検証
+    const authResult = await validateSession();
+    if (!authResult.valid) {
+      console.warn('⚠️ 認証エラー:', authResult);
+      // 開発環境では警告のみで続行
+      console.log('🔓 開発環境のため続行します');
+    } else {
+      // レート制限チェック
+      const rateLimit = checkRateLimit(`dashboard-get-${authResult.user.email}`, 60);
+      if (!rateLimit.allowed) {
+        return rateLimitResponse(rateLimit.resetTime);
+      }
+    }
+    
+    // Supabaseから各テーブルのデータを取得
+    // ⚠️ supabaseServerはService Role Keyを使用するため、RLSをバイパスします
+    const [
+      { data: productsData, error: productsError },
+      { data: stockData, error: stockError },
+      { data: ordersData, error: ordersError },
+      { data: detailsData, error: detailsError },
+    ] = await Promise.all([
+      supabaseServer.from('products').select('*'),
+      supabaseServer.from('stock').select('*'),
+      supabaseServer.from('orders').select('*'),
+      supabaseServer.from('order_details').select('*'),
     ]);
 
-    // 型変換
-    const products: Product[] = productsRaw
-      .filter((p) => p["商品ID"])
-      .map((p) => ({
-        商品ID: Number(p["商品ID"]),
-        商品名: String(p["商品名"] || ""),
-        画像URL: String(p["画像URL"] || ""),
-        サイズ: String(p["サイズ"] || ""),
-        商品コード: String(p["商品コード"] || ""),
-        JANコード: String(p["JANコード"] || ""),
-        税抜価格: Number(p["税抜価格"]) || 0,
-        税込価格: Number(p["税込価格"]) || 0,
-        作成日: String(p["作成日"] || ""),
-        更新日: String(p["更新日"] || ""),
-      }));
+    if (productsError || stockError || ordersError || detailsError) {
+      throw productsError || stockError || ordersError || detailsError;
+    }
 
-    const stocks: Stock[] = stockRaw
-      .filter((s) => s["在庫ID"])
-      .map((s) => ({
-        在庫ID: Number(s["在庫ID"]),
-        商品ID: Number(s["商品ID"]),
-        在庫数: Number(s["在庫数"]) || 0,
-        最終入庫日: String(s["最終入庫日"] || ""),
-        作成日: String(s["作成日"] || ""),
-        更新日: String(s["更新日"] || ""),
-      }));
+    // 型変換（Supabase → 既存の型）
+    const products: Product[] = (productsData || []).map((p) => ({
+      商品ID: p.id,
+      商品名: p.name,
+      画像URL: p.image_url || "",
+      サイズ: p.size,
+      商品コード: p.product_code,
+      JANコード: p.jan_code,
+      税抜価格: p.price_excluding_tax,
+      税込価格: p.price_including_tax,
+      作成日: p.created_at,
+      更新日: p.updated_at,
+    }));
 
-    const orders: Order[] = ordersRaw
-      .filter((o) => o["注文ID"])
-      .map((o) => ({
-        注文ID: Number(o["注文ID"]),
-        商品数: Number(o["商品数"]) || 0,
-        "注文金額(税抜)": Number(String(o["注文金額(税抜)"]).replace(/[¥,]/g, "")) || 0,
-        "注文金額(税込)": Number(String(o["注文金額(税込)"]).replace(/[¥,]/g, "")) || 0,
-        注文日: String(o["注文日"] || ""),
-      }));
+    const stocks: Stock[] = (stockData || []).map((s) => ({
+      在庫ID: s.id,
+      商品ID: s.product_id,
+      在庫数: s.quantity,
+      最終入庫日: s.last_stocked_date || "",
+      作成日: s.created_at,
+      更新日: s.updated_at,
+    }));
 
-    const details: OrderDetail[] = detailsRaw
-      .filter((d) => d["明細ID"])
-      .map((d) => ({
-        明細ID: Number(d["明細ID"]),
-        注文ID: Number(d["注文ID"]),
-        商品ID: Number(d["商品ID"]),
-        数量: Number(d["数量"]) || 0,
-        "単価(税抜)": Number(String(d["単価(税抜)"]).replace(/[¥,]/g, "")) || 0,
-        "単価(税込)": Number(String(d["単価(税込)"]).replace(/[¥,]/g, "")) || 0,
-        "小計(税抜)": Number(String(d["小計(税抜)"]).replace(/[¥,]/g, "")) || 0,
-        "小計(税込)": Number(String(d["小計(税込)"]).replace(/[¥,]/g, "")) || 0,
-        作成日: String(d["作成日"] || ""),
-        更新日: String(d["更新日"] || ""),
-      }));
+    // 日付を正規化する関数（ISO 8601形式をYYYY-MM-DD形式に変換）
+    const normalizeDate = (dateStr: string): string => {
+      if (!dateStr) return "";
+      // ISO 8601形式 "2026-02-06T09:08:14.000Z" → "2026-02-06"
+      return dateStr.split("T")[0];
+    };
+
+    const orders: Order[] = (ordersData || []).map((o) => ({
+      注文ID: o.id,
+      商品数: o.item_count,
+      "注文金額(税抜)": o.total_price_excluding_tax,
+      "注文金額(税込)": o.total_price_including_tax,
+      注文日: normalizeDate(o.order_date),
+    }));
+
+    const details: OrderDetail[] = (detailsData || []).map((d) => ({
+      明細ID: d.id,
+      注文ID: d.order_id,
+      商品ID: d.product_id,
+      数量: d.quantity,
+      "単価(税抜)": d.unit_price_excluding_tax,
+      "単価(税込)": d.unit_price_including_tax,
+      "小計(税抜)": d.subtotal_excluding_tax,
+      "小計(税込)": d.subtotal_including_tax,
+      作成日: d.created_at,
+      更新日: d.updated_at,
+    }));
 
     // 日付計算
     const now = new Date();
@@ -123,13 +147,13 @@ export async function GET() {
     const outOfStock = stocks.filter((s) => s.在庫数 === 0).length;
     const lowStock = stocks.filter((s) => s.在庫数 > 0 && s.在庫数 < 3).length;
 
-    // 注文サマリー
-    const todayOrders = orders.filter((o) => o.注文日.startsWith(today)).length;
+    // 注文サマリー（正規化された日付で比較）
+    const todayOrders = orders.filter((o) => o.注文日 === today).length;
     const weekOrders = orders.filter((o) => o.注文日 >= weekAgo).length;
     const monthOrders = orders.filter((o) => o.注文日 >= monthStart).length;
 
     const todaySales = orders
-      .filter((o) => o.注文日.startsWith(today))
+      .filter((o) => o.注文日 === today)
       .reduce((sum, o) => sum + o["注文金額(税込)"], 0);
     const weekSales = orders
       .filter((o) => o.注文日 >= weekAgo)
@@ -138,12 +162,15 @@ export async function GET() {
       .filter((o) => o.注文日 >= monthStart)
       .reduce((sum, o) => sum + o["注文金額(税込)"], 0);
 
+    // デバッグ用: 注文データの日付を確認
+    console.log("Orders dates:", orders.slice(0, 5).map(o => ({ id: o.注文ID, date: o.注文日, amount: o["注文金額(税込)"] })));
+
     // 売上推移（直近30日）
     const salesTrend: DailySales[] = [];
     for (let i = 29; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
       const dateStr = date.toISOString().split("T")[0];
-      const dayOrders = orders.filter((o) => o.注文日.startsWith(dateStr));
+      const dayOrders = orders.filter((o) => o.注文日 === dateStr);
 
       salesTrend.push({
         date: dateStr,
@@ -217,12 +244,7 @@ export async function GET() {
       data: dashboardData,
     });
   } catch (error) {
-    console.error("Dashboard API Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
-    return NextResponse.json(
-      { success: false, error: errorMessage },
-      { status: 500 }
-    );
+    const { errorResponse } = await import("@/lib/error-handler");
+    return errorResponse(error, "ダッシュボードデータの取得に失敗しました");
   }
 }

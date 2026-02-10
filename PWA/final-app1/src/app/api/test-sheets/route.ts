@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSheetData, SHEET_NAMES } from "@/lib/sheets";
+import { getSheetData, getGoogleSheetsClient, getSpreadsheetId, SHEET_NAMES } from "@/lib/sheets";
 
 /**
  * Google Sheets API 接続テスト
@@ -29,17 +29,30 @@ export async function GET() {
       );
     }
 
+    // スプレッドシートのメタデータを取得してシート名一覧を取得
+    const sheets = await getGoogleSheetsClient();
+    const spreadsheetId = getSpreadsheetId();
+    
+    const metadata = await sheets.spreadsheets.get({
+      spreadsheetId,
+      fields: "sheets.properties.title",
+    });
+
+    const sheetNames = metadata.data.sheets?.map(
+      (sheet) => sheet.properties?.title || ""
+    ).filter(Boolean) || [];
+
     // 商品データを取得してテスト
     const products = await getSheetData(SHEET_NAMES.PRODUCTS);
 
     return NextResponse.json({
       success: true,
       message: "Google Sheets API 接続成功！",
+      spreadsheetId: spreadsheetId,
+      sheets: sheetNames,
       data: {
-        spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
         serviceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
         productCount: products.length,
-        sampleData: products.slice(0, 3), // 最初の3件のみ
       },
     });
   } catch (error) {

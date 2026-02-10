@@ -5,7 +5,20 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Camera, Download, Upload, RefreshCw, Package } from "lucide-react";
+import { useRealtimeStock } from "@/hooks/useRealtimeStock";
+import { useToast } from "@/components/ui/toast";
+import { 
+  Search, 
+  Camera, 
+  Download, 
+  Upload, 
+  RefreshCw, 
+  Package,
+  Boxes,
+  ScanLine,
+  FileSpreadsheet,
+  AlertCircle
+} from "lucide-react";
 import { ProductList } from "@/components/inventory/product-list";
 import { StockEditModal } from "@/components/inventory/stock-edit-modal";
 import { BarcodeScanner } from "@/components/inventory/barcode-scanner";
@@ -20,6 +33,17 @@ export default function InventoryPage() {
   const [editingProduct, setEditingProduct] = useState<ProductWithStock | null>(null);
   const [showScanner, setShowScanner] = useState(false);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
+  const { info } = useToast();
+
+  // リアルタイム在庫更新
+  const { isConnected } = useRealtimeStock(
+    useCallback((update) => {
+      console.log('Stock updated:', update);
+      info("在庫が更新されました", `商品ID: ${update.product_id} の在庫が ${update.quantity} に変更されました`);
+      // データを再取得
+      fetchProducts(searchTerm);
+    }, [searchTerm])
+  );
 
   // 商品データを取得
   const fetchProducts = useCallback(async (search?: string) => {
@@ -30,7 +54,9 @@ export default function InventoryPage() {
         grouped: "true",
         ...(search && { search }),
       });
-      const response = await fetch(`/api/products?${params}`);
+      const response = await fetch(`/api/products?${params}`, {
+        credentials: 'include',
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -63,6 +89,7 @@ export default function InventoryPage() {
   const handleUpdateStock = async (productId: number, newQuantity: number) => {
     const response = await fetch("/api/stock", {
       method: "PUT",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         productId,
@@ -76,7 +103,6 @@ export default function InventoryPage() {
       throw new Error(data.error || "更新に失敗しました");
     }
 
-    // データを再取得
     await fetchProducts(searchTerm);
   };
 
@@ -85,14 +111,13 @@ export default function InventoryPage() {
     setShowScanner(false);
     
     try {
-      // JANコードで商品を検索
-      const response = await fetch(`/api/products/${code}`);
+      const response = await fetch(`/api/products?jancode=${code}`);
       const data = await response.json();
 
       if (data.success && data.data) {
-        // 在庫を+1する
         await fetch("/api/stock", {
           method: "PUT",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             productId: data.data.商品ID,
@@ -112,68 +137,117 @@ export default function InventoryPage() {
     }
   };
 
+  // 統計情報を計算
+  const stats = {
+    totalProducts: products.reduce((sum, g) => sum + g.variants.length, 0),
+    totalGroups: products.length,
+    totalStock: products.reduce((sum, g) => 
+      sum + g.variants.reduce((s, v) => s + (v.stock?.在庫数 || 0), 0), 0
+    ),
+    lowStock: products.reduce((sum, g) =>
+      sum + g.variants.filter(v => (v.stock?.在庫数 || 0) < 3).length, 0
+    ),
+  };
+
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-6">
-        {/* ページヘッダー */}
-        <div className="mb-6 flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">在庫管理</h1>
-            <p className="text-gray-600">商品の在庫状況を確認・管理します</p>
+      {/* Hero Section - Sticky */}
+      <div className="sticky top-0 z-40 bg-gray-50 container mx-auto px-4 pt-4 pb-2">
+        <div className="relative overflow-hidden rounded-xl bg-emerald-600 px-6 py-4 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Boxes className="w-5 h-5" />
+              <h1 className="text-xl font-bold">在庫管理</h1>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-6 text-sm">
+                <div>
+                  <span className="text-white/70">商品グループ</span>
+                  <span className="ml-2 font-semibold">{stats.totalGroups}</span>
+                </div>
+                <div>
+                  <span className="text-white/70">総SKU数</span>
+                  <span className="ml-2 font-semibold">{stats.totalProducts}</span>
+                </div>
+                <div>
+                  <span className="text-white/70">総在庫数</span>
+                  <span className="ml-2 font-semibold">{stats.totalStock.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-white/70">在庫アラート</span>
+                  <span className="ml-2 font-semibold flex items-center gap-1">
+                    {stats.lowStock}
+                    {stats.lowStock > 0 && <AlertCircle className="w-4 h-4 text-yellow-300" />}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {isConnected && (
+                  <div className="flex items-center gap-1 text-xs text-white/70">
+                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                    <span>リアルタイム</span>
+                  </div>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => fetchProducts(searchTerm)}
+                  disabled={isLoading}
+                  className="bg-white/20 hover:bg-white/30 text-white border-0 h-8"
+                >
+                  <RefreshCw className={`w-3 h-3 mr-1 ${isLoading ? "animate-spin" : ""}`} />
+                  更新
+                </Button>
+              </div>
+            </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fetchProducts(searchTerm)}
-            disabled={isLoading}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-            更新
-          </Button>
         </div>
+      </div>
 
-        {/* 検索・アクションバー */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row gap-4">
+      {/* Scrollable Content */}
+      <div className="container mx-auto px-4 space-y-6 pb-8">
+        {/* Search & Action Bar */}
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-5">
+            <div className="flex flex-col lg:flex-row gap-4">
               {/* 検索 */}
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
+                  id="inventory-search"
+                  name="search"
+                  type="search"
                   placeholder="商品名、商品コード、JANコードで検索..."
-                  className="pl-10"
+                  className="pl-12 h-12 text-base bg-gray-50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary/20"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
 
               {/* アクションボタン */}
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <Button
-                  variant="outline"
-                  size="icon"
-                  title="バーコードスキャン（在庫追加）"
                   onClick={() => setShowScanner(true)}
+                  className="h-12 px-5 gradient-primary border-0 rounded-xl gap-2"
                 >
-                  <Camera className="w-4 h-4" />
+                  <ScanLine className="w-5 h-5" />
+                  <span className="hidden sm:inline">スキャン入庫</span>
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    window.location.href = "/api/csv/download?type=data";
-                  }}
+                  onClick={() => window.location.href = "/api/csv/download?type=data"}
+                  className="h-12 px-4 rounded-xl gap-2"
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  CSV出力
+                  <Download className="w-5 h-5" />
+                  <span className="hidden sm:inline">CSV出力</span>
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={() => setShowCsvUpload(true)}
+                  className="h-12 px-4 rounded-xl gap-2"
                 >
-                  <Upload className="w-4 h-4 mr-2" />
-                  CSV入力
+                  <Upload className="w-5 h-5" />
+                  <span className="hidden sm:inline">CSV入力</span>
                 </Button>
               </div>
             </div>
@@ -182,28 +256,22 @@ export default function InventoryPage() {
 
         {/* 商品一覧 */}
         {isLoading ? (
-          <Card>
-            <CardContent className="py-12">
-              <div className="flex flex-col items-center justify-center">
-                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
-                <p className="text-gray-500 mt-4">読み込み中...</p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-24 bg-white rounded-2xl shimmer" />
+            ))}
+          </div>
         ) : error ? (
-          <Card>
-            <CardContent className="py-12">
-              <div className="text-center text-red-500">
-                <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>{error}</p>
-                <p className="text-sm mt-2 text-gray-500">
-                  Google Spreadsheet の設定を確認してください
-                </p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => fetchProducts()}
-                >
+          <Card className="border-0 shadow-lg">
+            <CardContent className="py-16">
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mb-6">
+                  <Package className="w-10 h-10 text-red-500" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">エラーが発生しました</h2>
+                <p className="text-gray-500 mb-6 max-w-md">{error}</p>
+                <Button onClick={() => fetchProducts()} size="lg" className="gap-2">
+                  <RefreshCw className="w-4 h-4" />
                   再試行
                 </Button>
               </div>
@@ -211,8 +279,10 @@ export default function InventoryPage() {
           </Card>
         ) : (
           <>
-            <div className="mb-4 text-sm text-gray-500">
-              {products.length} 件の商品グループ
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">
+                <span className="font-medium text-gray-900">{products.length}</span> 件の商品グループ
+              </p>
             </div>
             <ProductList
               products={products}
@@ -222,6 +292,7 @@ export default function InventoryPage() {
         )}
       </div>
 
+      {/* Modals */}
       {/* 在庫編集モーダル */}
       {editingProduct && (
         <StockEditModal

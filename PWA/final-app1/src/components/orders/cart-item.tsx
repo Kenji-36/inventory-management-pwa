@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Plus, Minus, Trash2, Package } from "lucide-react";
+import Image from "next/image";
 import type { CartItem as CartItemType } from "@/types";
 
 interface CartItemProps {
@@ -16,8 +17,20 @@ export function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
   return (
     <div className="flex items-center justify-between p-4 border rounded-lg">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-          <Package className="w-6 h-6 text-gray-400" />
+        <div className="relative w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+          {product.画像URL ? (
+            <Image
+              src={product.画像URL}
+              alt={product.商品名}
+              fill
+              className="object-cover"
+              sizes="48px"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Package className="w-6 h-6 text-gray-400" />
+            </div>
+          )}
         </div>
         <div>
           <div className="font-medium">{product.商品名}</div>

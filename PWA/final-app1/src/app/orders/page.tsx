@@ -4,7 +4,16 @@ import { useState, useEffect, useCallback } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw, ShoppingCart } from "lucide-react";
+import { 
+  Plus, 
+  RefreshCw, 
+  ShoppingCart, 
+  TrendingUp,
+  Calendar,
+  DollarSign,
+  Package,
+  ArrowUpRight
+} from "lucide-react";
 import Link from "next/link";
 import { OrderList } from "@/components/orders/order-list";
 import { OrderDetailModal } from "@/components/orders/order-detail-modal";
@@ -21,7 +30,9 @@ export default function OrdersPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/orders");
+      const response = await fetch("/api/orders", {
+        credentials: 'include',
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -50,85 +61,176 @@ export default function OrdersPage() {
       return o.注文日.startsWith(today);
     }).length,
     totalSales: orders.reduce((sum, o) => sum + o["注文金額(税込)"], 0),
+    avgOrderValue: orders.length > 0 
+      ? Math.round(orders.reduce((sum, o) => sum + o["注文金額(税込)"], 0) / orders.length)
+      : 0,
   };
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-6">
-        {/* ページヘッダー */}
-        <div className="mb-6 flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">注文管理</h1>
-            <p className="text-gray-600">注文履歴の確認と新規注文の作成</p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchOrders}
-              disabled={isLoading}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-              更新
-            </Button>
-            <Link href="/orders/new">
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                新規注文
-              </Button>
-            </Link>
+      {/* Hero Section - Sticky */}
+      <div className="sticky top-0 z-40 bg-gray-50 container mx-auto px-4 pt-4 pb-2">
+        <div className="relative overflow-hidden rounded-xl bg-gray-700 px-6 py-4 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ShoppingCart className="w-5 h-5" />
+              <h1 className="text-xl font-bold">注文管理</h1>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-6 text-sm">
+                <div>
+                  <span className="text-white/70">総注文数</span>
+                  <span className="ml-2 font-semibold">{stats.totalOrders}件</span>
+                </div>
+                <div>
+                  <span className="text-white/70">本日の注文</span>
+                  <span className="ml-2 font-semibold">{stats.todayOrders}件</span>
+                </div>
+                <div>
+                  <span className="text-white/70">総売上</span>
+                  <span className="ml-2 font-semibold">¥{(stats.totalSales / 1000).toFixed(0)}k</span>
+                </div>
+                <div>
+                  <span className="text-white/70">平均注文額</span>
+                  <span className="ml-2 font-semibold">¥{stats.avgOrderValue.toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={fetchOrders}
+                  disabled={isLoading}
+                  className="bg-white/10 hover:bg-white/20 text-white border-0 h-8"
+                >
+                  <RefreshCw className={`w-3 h-3 mr-1 ${isLoading ? "animate-spin" : ""}`} />
+                  更新
+                </Button>
+                <Link href="/orders/new">
+                  <Button size="sm" className="bg-white text-gray-800 hover:bg-gray-100 border-0 h-8">
+                    <Plus className="w-3 h-3 mr-1" />
+                    新規注文
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* 統計カード */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-500">総注文数</div>
-              <div className="text-2xl font-bold">{stats.totalOrders}件</div>
+      {/* Scrollable Content */}
+      <div className="container mx-auto px-4 space-y-6 pb-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="border-0 shadow-lg card-hover overflow-hidden">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center">
+                  <ShoppingCart className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">総注文数</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}件</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-500">本日の注文</div>
-              <div className="text-2xl font-bold">{stats.todayOrders}件</div>
+
+          <Card className="border-0 shadow-lg card-hover overflow-hidden">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">本日の注文</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.todayOrders}件</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-500">総売上（税込）</div>
-              <div className="text-2xl font-bold">
-                ¥{stats.totalSales.toLocaleString()}
+
+          <Card className="border-0 shadow-lg card-hover overflow-hidden">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">総売上（税込）</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    ¥{stats.totalSales.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg card-hover overflow-hidden">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">平均注文額</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    ¥{stats.avgOrderValue.toLocaleString()}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Quick Action */}
+        <Link href="/orders/new">
+          <Card className="border-0 shadow-lg card-hover bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 transition-all cursor-pointer">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
+                    <Plus className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 text-lg">新規注文を作成</h3>
+                    <p className="text-gray-500">バーコードスキャンで商品を追加して注文を作成</p>
+                  </div>
+                </div>
+                <ArrowUpRight className="w-6 h-6 text-gray-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
 
         {/* 注文一覧 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>注文一覧</CardTitle>
+        <Card className="border-0 shadow-lg overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Package className="w-5 h-5 text-primary" />
+              注文一覧
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
-                <p className="text-gray-500 mt-4">読み込み中...</p>
+              <div className="p-6 space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-20 bg-gray-100 rounded-xl shimmer" />
+                ))}
               </div>
             ) : error ? (
-              <div className="text-center py-12">
-                <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-red-500 opacity-50" />
-                <p className="text-red-500">{error}</p>
-                <p className="text-sm mt-2 text-gray-500">
-                  Google Spreadsheet の設定を確認してください
-                </p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={fetchOrders}
-                >
-                  再試行
-                </Button>
+              <div className="py-16">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mb-6">
+                    <ShoppingCart className="w-10 h-10 text-red-500" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">エラーが発生しました</h2>
+                  <p className="text-gray-500 mb-6 max-w-md">{error}</p>
+                  <Button onClick={fetchOrders} size="lg" className="gap-2">
+                    <RefreshCw className="w-4 h-4" />
+                    再試行
+                  </Button>
+                </div>
               </div>
             ) : (
               <OrderList orders={orders} onSelectOrder={setSelectedOrder} />
@@ -137,6 +239,7 @@ export default function OrdersPage() {
         </Card>
       </div>
 
+      {/* Modals */}
       {/* 注文詳細モーダル */}
       {selectedOrder && (
         <OrderDetailModal

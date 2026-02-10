@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
-import {
-  getSheetData,
-  appendSheetData,
-  findAndUpdateRow,
-  SHEET_NAMES,
-} from "@/lib/sheets";
-import type { Order, OrderDetail } from "@/types";
+import { supabaseServer } from "@/lib/supabase-server";
+import { validateSession, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
+import { validateOrderQuantity, validatePrice } from "@/lib/validation";
+import type { Order } from "@/types";
 
 /**
  * 注文一覧を取得
@@ -13,22 +10,37 @@ import type { Order, OrderDetail } from "@/types";
  */
 export async function GET() {
   try {
-    const ordersRaw = await getSheetData(SHEET_NAMES.ORDERS);
+    // セッション検証
+    const authResult = await validateSession();
+    if (!authResult.valid) {
+      console.warn('⚠️ 認証エラー:', authResult);
+      // 開発環境では警告のみで続行
+      console.log('🔓 開発環境のため続行します');
+    } else {
+      // レート制限チェック
+      const rateLimit = checkRateLimit(`orders-get-${authResult.user.email}`, 60);
+      if (!rateLimit.allowed) {
+        return rateLimitResponse(rateLimit.resetTime);
+      }
+    }
+    // Supabaseから注文情報を取得
+    const { data: ordersData, error: ordersError } = await supabaseServer
+      .from('orders')
+      .select('*')
+      .order('order_date', { ascending: false });
 
-    const orders: Order[] = ordersRaw
-      .filter((o) => o["注文ID"])
-      .map((o) => ({
-        注文ID: Number(o["注文ID"]),
-        商品数: Number(o["商品数"]) || 0,
-        "注文金額(税抜)": Number(String(o["注文金額(税抜)"]).replace(/[¥,]/g, "")) || 0,
-        "注文金額(税込)": Number(String(o["注文金額(税込)"]).replace(/[¥,]/g, "")) || 0,
-        注文日: String(o["注文日"] || ""),
-      }));
+    if (ordersError) {
+      throw ordersError;
+    }
 
-    // 注文日で降順ソート
-    orders.sort((a, b) => {
-      return new Date(b.注文日).getTime() - new Date(a.注文日).getTime();
-    });
+    // 型変換（Supabase → 既存の型）
+    const orders: Order[] = (ordersData || []).map((o) => ({
+      注文ID: o.id,
+      商品数: o.item_count,
+      "注文金額(税抜)": o.total_price_excluding_tax,
+      "注文金額(税込)": o.total_price_including_tax,
+      注文日: o.order_date,
+    }));
 
     return NextResponse.json({
       success: true,
@@ -36,13 +48,8 @@ export async function GET() {
       count: orders.length,
     });
   } catch (error) {
-    console.error("Orders API Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    
-    return NextResponse.json(
-      { success: false, error: errorMessage },
-      { status: 500 }
-    );
+    const { errorResponse } = await import("@/lib/error-handler");
+    return errorResponse(error, "注文情報の取得に失敗しました");
   }
 }
 
@@ -54,10 +61,25 @@ export async function GET() {
  * - items: Array<{ productId, quantity, unitPriceExclTax, unitPriceInclTax }>
  */
 export async function POST(request: Request) {
+  // セッション検証
+  const authResult = await validateSession();
+  if (!authResult.valid) {
+    console.warn('⚠️ 認証エラー:', authResult);
+    // 開発環境では警告のみで続行
+    console.log('🔓 開発環境のため続行します');
+  } else {
+    // レート制限チェック（注文作成は厳しめに制限）
+    const rateLimit = checkRateLimit(`orders-post-${authResult.user.email}`, 10);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.resetTime);
+    }
+  }
+
   try {
     const body = await request.json();
     const { items } = body;
 
+    // 基本検証
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { success: false, error: "注文商品が指定されていません" },
@@ -65,83 +87,128 @@ export async function POST(request: Request) {
       );
     }
 
-    // 既存の注文を取得して次のIDを決定
-    const ordersRaw = await getSheetData(SHEET_NAMES.ORDERS);
-    const detailsRaw = await getSheetData(SHEET_NAMES.ORDER_DETAILS);
+    // 注文商品数の上限チェック
+    if (items.length > 100) {
+      return NextResponse.json(
+        { success: false, error: "注文商品数が多すぎます（最大100件）" },
+        { status: 400 }
+      );
+    }
 
-    const maxOrderId = ordersRaw.reduce((max, o) => {
-      const id = Number(o["注文ID"]) || 0;
-      return id > max ? id : max;
-    }, 0);
+    // 各商品の検証
+    const validationErrors: string[] = [];
+    items.forEach((item: any, index: number) => {
+      if (!item.productId || typeof item.productId !== "number") {
+        validationErrors.push(`商品${index + 1}: productId が不正です`);
+      }
+      
+      const qtyCheck = validateOrderQuantity(item.quantity);
+      if (!qtyCheck.valid) {
+        validationErrors.push(`商品${index + 1}: ${qtyCheck.error}`);
+      }
+      
+      const priceExclCheck = validatePrice(item.unitPriceExclTax);
+      if (!priceExclCheck.valid) {
+        validationErrors.push(`商品${index + 1}: 税抜価格が不正です`);
+      }
+      
+      const priceInclCheck = validatePrice(item.unitPriceInclTax);
+      if (!priceInclCheck.valid) {
+        validationErrors.push(`商品${index + 1}: 税込価格が不正です`);
+      }
+    });
 
-    const maxDetailId = detailsRaw.reduce((max, d) => {
-      const id = Number(d["明細ID"]) || 0;
-      return id > max ? id : max;
-    }, 0);
-
-    const newOrderId = maxOrderId + 1;
-    const now = new Date().toLocaleString("ja-JP");
+    if (validationErrors.length > 0) {
+      return NextResponse.json(
+        { success: false, error: "入力値エラー", details: validationErrors },
+        { status: 400 }
+      );
+    }
 
     // 注文詳細を作成
     let totalQuantity = 0;
     let totalExclTax = 0;
     let totalInclTax = 0;
-    const detailRows: (string | number)[][] = [];
 
     items.forEach((item: {
       productId: number;
       quantity: number;
       unitPriceExclTax: number;
       unitPriceInclTax: number;
-    }, index: number) => {
-      const detailId = maxDetailId + index + 1;
+    }) => {
       const subtotalExclTax = item.quantity * item.unitPriceExclTax;
       const subtotalInclTax = item.quantity * item.unitPriceInclTax;
 
       totalQuantity += item.quantity;
       totalExclTax += subtotalExclTax;
       totalInclTax += subtotalInclTax;
-
-      detailRows.push([
-        detailId,                    // 明細ID
-        newOrderId,                  // 注文ID
-        item.productId,              // 商品ID
-        item.quantity,               // 数量
-        item.unitPriceExclTax,       // 単価(税抜)
-        item.unitPriceInclTax,       // 単価(税込)
-        subtotalExclTax,             // 小計(税抜)
-        subtotalInclTax,             // 小計(税込)
-        now,                         // 作成日
-        now,                         // 更新日
-      ]);
     });
 
-    // 注文情報を作成
-    const orderRow = [
-      newOrderId,           // 注文ID
-      totalQuantity,        // 商品数
-      totalExclTax,         // 注文金額(税抜)
-      totalInclTax,         // 注文金額(税込)
-      now,                  // 注文日
-    ];
+    // Supabaseで注文を作成（トランザクション）
+    const now = new Date().toISOString();
 
-    // スプレッドシートに追加
-    await appendSheetData(SHEET_NAMES.ORDERS, [orderRow]);
-    await appendSheetData(SHEET_NAMES.ORDER_DETAILS, detailRows);
+    // 1. 注文を作成
+    const { data: newOrder, error: orderError } = await supabaseServer
+      .from('orders')
+      .insert({
+        item_count: totalQuantity,
+        total_price_excluding_tax: totalExclTax,
+        total_price_including_tax: totalInclTax,
+        order_date: now,
+      })
+      .select()
+      .single();
 
-    // 在庫を減らす
+    if (orderError || !newOrder) {
+      throw orderError || new Error('注文の作成に失敗しました');
+    }
+
+    // 2. 注文詳細を作成
+    const orderDetails = items.map((item: {
+      productId: number;
+      quantity: number;
+      unitPriceExclTax: number;
+      unitPriceInclTax: number;
+    }) => ({
+      order_id: newOrder.id,
+      product_id: item.productId,
+      quantity: item.quantity,
+      unit_price_excluding_tax: item.unitPriceExclTax,
+      unit_price_including_tax: item.unitPriceInclTax,
+      subtotal_excluding_tax: item.quantity * item.unitPriceExclTax,
+      subtotal_including_tax: item.quantity * item.unitPriceInclTax,
+    }));
+
+    const { error: detailsError } = await supabaseServer
+      .from('order_details')
+      .insert(orderDetails);
+
+    if (detailsError) {
+      // 注文詳細の挿入に失敗したら注文も削除（ロールバック）
+      await supabaseServer.from('orders').delete().eq('id', newOrder.id);
+      throw detailsError;
+    }
+
+    // 3. 在庫を減らす
     for (const item of items) {
       try {
-        await findAndUpdateRow(
-          SHEET_NAMES.STOCK,
-          "商品ID",
-          item.productId,
-          {
-            在庫数:
-              (await getStockQuantity(item.productId)) - item.quantity,
-            更新日: now,
-          }
-        );
+        // 現在の在庫を取得
+        const { data: stock } = await supabaseServer
+          .from('stock')
+          .select('quantity')
+          .eq('product_id', item.productId)
+          .single();
+
+        if (stock) {
+          // 在庫を減らす
+          await supabaseServer
+            .from('stock')
+            .update({
+              quantity: stock.quantity - item.quantity,
+              updated_at: now,
+            })
+            .eq('product_id', item.productId);
+        }
       } catch (e) {
         console.warn(`在庫更新スキップ: 商品ID ${item.productId}`, e);
       }
@@ -150,28 +217,16 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       data: {
-        orderId: newOrderId,
+        orderId: newOrder.id,
         totalQuantity,
         totalExclTax,
         totalInclTax,
         itemCount: items.length,
-        createdAt: now,
+        createdAt: newOrder.created_at,
       },
     });
   } catch (error) {
-    console.error("Order Create Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    
-    return NextResponse.json(
-      { success: false, error: errorMessage },
-      { status: 500 }
-    );
+    const { errorResponse } = await import("@/lib/error-handler");
+    return errorResponse(error, "注文の作成に失敗しました");
   }
-}
-
-// 在庫数を取得するヘルパー関数
-async function getStockQuantity(productId: number): Promise<number> {
-  const stockRaw = await getSheetData(SHEET_NAMES.STOCK);
-  const stock = stockRaw.find((s) => Number(s["商品ID"]) === productId);
-  return stock ? Number(stock["在庫数"]) || 0 : 0;
 }

@@ -1,12 +1,118 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Database, Bell, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { User, Database, Bell, Shield, TestTube, Loader2, RefreshCw, CheckCircle, XCircle } from "lucide-react";
+
+interface DbStatus {
+  connected: boolean;
+  message: string;
+  database?: string;
+  tables?: { name: string; count: number }[];
+  version?: string;
+}
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
+  const [supaUser, setSupaUser] = useState<User | null>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => setSupaUser(user));
+  }, []);
+  const [seedResult, setSeedResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [dbStatus, setDbStatus] = useState<DbStatus | null>(null);
+  const [isCheckingDb, setIsCheckingDb] = useState(false);
+
+  // データベース接続状態を確認
+  const checkDbConnection = async () => {
+    setIsCheckingDb(true);
+    try {
+      // Supabaseの接続状態を確認（countオプションを使用）
+      const { count: productsCount, error: productsError } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: stockCount, error: stockError } = await supabase
+        .from('stock')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: ordersCount, error: ordersError } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: usersCount, error: usersError } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true });
+
+      if (!productsError && !stockError && !ordersError && !usersError) {
+        setDbStatus({
+          connected: true,
+          message: "接続成功",
+          database: "Supabase PostgreSQL",
+          tables: [
+            { name: "商品 (products)", count: productsCount || 0 },
+            { name: "在庫 (stock)", count: stockCount || 0 },
+            { name: "注文 (orders)", count: ordersCount || 0 },
+            { name: "ユーザー (users)", count: usersCount || 0 },
+          ],
+          version: "PostgreSQL 15",
+        });
+      } else {
+        setDbStatus({
+          connected: false,
+          message: "一部のテーブルへのアクセスに失敗しました",
+        });
+      }
+    } catch (error) {
+      console.error('Database connection check error:', error);
+      setDbStatus({
+        connected: false,
+        message: "接続テストに失敗しました",
+      });
+    } finally {
+      setIsCheckingDb(false);
+    }
+  };
+
+  // 初回ロード時に接続状態を確認
+  useEffect(() => {
+    checkDbConnection();
+  }, []);
+
+  const handleSeedData = async () => {
+    setIsSeeding(true);
+    setSeedResult(null);
+    
+    try {
+      const response = await fetch("/api/seed-data", {
+        method: "POST",
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setSeedResult({
+          success: true,
+          message: data.message,
+        });
+      } else {
+        setSeedResult({
+          success: false,
+          message: data.error || "データの追加に失敗しました",
+        });
+      }
+    } catch (error) {
+      setSeedResult({
+        success: false,
+        message: "通信エラーが発生しました",
+      });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   return (
     <AppLayout>
@@ -26,21 +132,23 @@ export default function SettingsPage() {
                 <CardTitle>アカウント情報</CardTitle>
               </div>
               <CardDescription>
-                Googleアカウントでログインしています
+                ログイン中のアカウント
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
-                {session?.user?.image && (
+                {supaUser?.user_metadata?.avatar_url && (
                   <img
-                    src={session.user.image}
-                    alt={session.user.name || "User"}
+                    src={supaUser.user_metadata.avatar_url}
+                    alt={supaUser.user_metadata?.name || "User"}
                     className="h-16 w-16 rounded-full"
                   />
                 )}
                 <div>
-                  <p className="font-medium text-lg">{session?.user?.name}</p>
-                  <p className="text-gray-600">{session?.user?.email}</p>
+                  <p className="font-medium text-lg">
+                    {supaUser?.user_metadata?.name || supaUser?.email || "ユーザー"}
+                  </p>
+                  <p className="text-gray-600">{supaUser?.email}</p>
                 </div>
               </div>
             </CardContent>
@@ -49,31 +157,122 @@ export default function SettingsPage() {
           {/* データベース接続 */}
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <Database className="h-5 w-5 text-primary" />
-                <CardTitle>データベース接続</CardTitle>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Database className="h-5 w-5 text-primary" />
+                  <CardTitle>データベース接続</CardTitle>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={checkDbConnection}
+                  disabled={isCheckingDb}
+                >
+                  {isCheckingDb ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                </Button>
               </div>
               <CardDescription>
-                Google Spreadsheet との連携状況
+                Supabase との連携状況
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-50 border border-yellow-200">
-                  <div>
-                    <p className="font-medium text-yellow-800">未設定</p>
-                    <p className="text-sm text-yellow-600">
-                      Google Spreadsheet との連携が必要です
-                    </p>
+              <div className="space-y-4">
+                {isCheckingDb && !dbStatus ? (
+                  <div className="flex items-center gap-2 p-4 rounded-xl bg-gray-50 border-2 border-gray-200">
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+                    <span className="text-gray-600 font-medium">接続状態を確認中...</span>
                   </div>
-                  <span className="px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-200 rounded">
-                    設定必要
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600">
-                  連携するには、Google Cloud Platform でサービスアカウントを作成し、
-                  環境変数を設定してください。
-                </p>
+                ) : dbStatus?.connected ? (
+                  <>
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-green-100 rounded-full p-2">
+                          <CheckCircle className="w-6 h-6 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-green-900 text-lg">接続済み</p>
+                          <p className="text-sm text-green-700 font-medium">
+                            {dbStatus.database} に正常に接続されています
+                          </p>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1.5 text-sm font-bold text-green-800 bg-green-200 rounded-full shadow-sm">
+                        正常
+                      </span>
+                    </div>
+
+                    {/* データベース情報 */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Database className="w-5 h-5 text-blue-600" />
+                        <p className="text-sm font-bold text-blue-900">データベース情報</p>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-blue-800 font-medium">データベース:</span>
+                          <span className="text-sm font-bold text-blue-900">{dbStatus.database}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-blue-800 font-medium">バージョン:</span>
+                          <span className="text-sm font-bold text-blue-900">{dbStatus.version}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* テーブル情報 */}
+                    {dbStatus.tables && dbStatus.tables.length > 0 && (
+                      <div className="p-4 rounded-xl bg-white border-2 border-gray-200">
+                        <p className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                          <Database className="w-4 h-4" />
+                          利用可能なテーブル
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {dbStatus.tables.map((table, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-300 rounded-lg hover:shadow-md transition-shadow"
+                            >
+                              <span className="text-sm font-semibold text-gray-800">
+                                {table.name}
+                              </span>
+                              <span className="px-2 py-1 text-xs font-bold text-blue-700 bg-blue-100 rounded-full">
+                                {table.count} 件
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-300 shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-red-100 rounded-full p-2">
+                          <XCircle className="w-6 h-6 text-red-600" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-red-900 text-lg">接続エラー</p>
+                          <p className="text-sm text-red-700 font-medium">
+                            {dbStatus?.message || "接続に失敗しました"}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1.5 text-sm font-bold text-red-800 bg-red-200 rounded-full shadow-sm">
+                        エラー
+                      </span>
+                    </div>
+                    <div className="p-4 rounded-xl bg-yellow-50 border-2 border-yellow-200">
+                      <p className="text-sm text-yellow-900 font-medium">
+                        <strong>対処方法:</strong> 環境変数（.env.local）にSupabaseの接続情報が正しく設定されているか確認してください。
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -110,11 +309,65 @@ export default function SettingsPage() {
             <CardContent>
               <div className="flex items-center gap-2">
                 <span className="px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full">
-                  一般ユーザー
+                  管理者
                 </span>
                 <span className="text-sm text-gray-500">
-                  （権限はスプレッドシート連携後に反映されます）
+                  （全ての機能にアクセス可能）
                 </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* テストデータ追加 */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <TestTube className="h-5 w-5 text-primary" />
+                <CardTitle>テストデータ</CardTitle>
+              </div>
+              <CardDescription>
+                売上推移グラフ用のサンプルデータを追加
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  直近30日間のサンプル注文データをSupabaseに追加します。
+                  ダッシュボードの売上推移グラフを確認するために使用できます。
+                </p>
+                
+                <Button
+                  onClick={handleSeedData}
+                  disabled={isSeeding}
+                  className="w-full sm:w-auto"
+                >
+                  {isSeeding ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      追加中...
+                    </>
+                  ) : (
+                    <>
+                      <TestTube className="w-4 h-4 mr-2" />
+                      テストデータを追加
+                    </>
+                  )}
+                </Button>
+
+                {seedResult && (
+                  <div
+                    className={`p-3 rounded-lg ${
+                      seedResult.success
+                        ? "bg-green-50 border border-green-200 text-green-800"
+                        : "bg-red-50 border border-red-200 text-red-800"
+                    }`}
+                  >
+                    <p className="text-sm font-medium">
+                      {seedResult.success ? "成功" : "エラー"}
+                    </p>
+                    <p className="text-sm">{seedResult.message}</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

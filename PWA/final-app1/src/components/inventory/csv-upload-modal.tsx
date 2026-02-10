@@ -84,31 +84,37 @@ export function CsvUploadModal({ onClose, onSuccess }: CsvUploadModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-lg bg-white shadow-2xl border-2 border-gray-200">
+        <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg pb-4">
+          <CardTitle className="flex items-center gap-2 text-white font-bold">
             <Upload className="w-5 h-5" />
             CSV一括インポート
           </CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onClose}
+            className="text-white hover:bg-white/20 rounded-full"
+          >
             <X className="w-5 h-5" />
           </Button>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 bg-white p-6">
           {/* テンプレートダウンロード */}
-          <div className="bg-blue-50 rounded-lg p-4">
-            <h3 className="font-medium text-blue-900 mb-2">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-5 shadow-sm">
+            <h3 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+              <FileText className="w-5 h-5" />
               テンプレートファイル
             </h3>
-            <p className="text-sm text-blue-700 mb-3">
+            <p className="text-sm text-blue-800 mb-4">
               CSVテンプレートをダウンロードして、商品情報を入力してください。
             </p>
             <Button
               variant="outline"
               size="sm"
               onClick={handleDownloadTemplate}
-              className="bg-white"
+              className="bg-white border-2 border-blue-300 hover:bg-blue-50 font-semibold"
             >
               <FileText className="w-4 h-4 mr-2" />
               テンプレートをダウンロード
@@ -117,7 +123,7 @@ export function CsvUploadModal({ onClose, onSuccess }: CsvUploadModalProps) {
 
           {/* ファイル選択 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-3">
               CSVファイルを選択
             </label>
             <input
@@ -129,24 +135,31 @@ export function CsvUploadModal({ onClose, onSuccess }: CsvUploadModalProps) {
             />
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-gray-50 transition-colors"
+              className="border-3 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-purple-500 hover:bg-purple-50 transition-all duration-200 bg-gradient-to-br from-gray-50 to-white"
             >
               {selectedFile ? (
-                <div className="flex items-center justify-center gap-2">
-                  <FileText className="w-6 h-6 text-primary" />
-                  <span className="font-medium">{selectedFile.name}</span>
-                  <span className="text-sm text-gray-500">
-                    ({(selectedFile.size / 1024).toFixed(1)} KB)
-                  </span>
+                <div className="flex flex-col items-center gap-3">
+                  <div className="bg-purple-100 rounded-full p-3">
+                    <FileText className="w-8 h-8 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900">{selectedFile.name}</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      ({(selectedFile.size / 1024).toFixed(1)} KB)
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <>
-                  <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                  <p className="text-gray-600">
+                  <Upload className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                  <p className="text-gray-700 font-semibold text-lg">
                     クリックしてファイルを選択
                   </p>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm text-gray-500 mt-2">
                     または、ファイルをドラッグ＆ドロップ
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    対応形式: CSV (.csv)
                   </p>
                 </>
               )}
@@ -156,29 +169,38 @@ export function CsvUploadModal({ onClose, onSuccess }: CsvUploadModalProps) {
           {/* 結果表示 */}
           {result && (
             <div
-              className={`rounded-lg p-4 ${
+              className={`rounded-xl p-5 border-2 shadow-sm ${
                 result.success
-                  ? "bg-green-50 text-green-800"
-                  : "bg-red-50 text-red-800"
+                  ? "bg-gradient-to-br from-green-50 to-emerald-50 text-green-800 border-green-300"
+                  : "bg-gradient-to-br from-red-50 to-pink-50 text-red-800 border-red-300"
               }`}
             >
-              <div className="flex items-start gap-2">
-                {result.success ? (
-                  <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                )}
-                <div>
-                  <p className="font-medium">{result.message}</p>
+              <div className="flex items-start gap-3">
+                <div className={`rounded-full p-2 ${
+                  result.success ? "bg-green-100" : "bg-red-100"
+                }`}>
+                  {result.success ? (
+                    <CheckCircle className="w-6 h-6 flex-shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-6 h-6 flex-shrink-0" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-lg">{result.message}</p>
                   {result.errors && result.errors.length > 0 && (
-                    <ul className="mt-2 text-sm space-y-1">
+                    <ul className="mt-3 text-sm space-y-2 bg-white/50 rounded-lg p-3 border border-red-200">
                       {result.errors.slice(0, 5).map((err, i) => (
-                        <li key={i}>
-                          行{err.row}: {err.field} - {err.message}
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-red-600 font-bold">•</span>
+                          <span>
+                            <strong>行{err.row}:</strong> {err.field} - {err.message}
+                          </span>
                         </li>
                       ))}
                       {result.errors.length > 5 && (
-                        <li>...他 {result.errors.length - 5} 件のエラー</li>
+                        <li className="text-red-600 font-semibold">
+                          ...他 {result.errors.length - 5} 件のエラー
+                        </li>
                       )}
                     </ul>
                   )}
@@ -188,28 +210,28 @@ export function CsvUploadModal({ onClose, onSuccess }: CsvUploadModalProps) {
           )}
 
           {/* アクションボタン */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 pt-2">
             <Button
               variant="outline"
-              className="flex-1"
+              className="flex-1 h-12 border-2 border-gray-300 hover:bg-gray-100 font-semibold"
               onClick={onClose}
               disabled={isUploading}
             >
               キャンセル
             </Button>
             <Button
-              className="flex-1"
+              className="flex-1 h-12 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold shadow-lg disabled:opacity-50"
               onClick={handleUpload}
               disabled={!selectedFile || isUploading}
             >
               {isUploading ? (
-                <>
-                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                <span className="flex items-center gap-2">
+                  <div className="animate-spin w-5 h-5 border-3 border-white border-t-transparent rounded-full" />
                   処理中...
-                </>
+                </span>
               ) : (
                 <>
-                  <Upload className="w-4 h-4 mr-2" />
+                  <Upload className="w-5 h-5 mr-2" />
                   インポート
                 </>
               )}
