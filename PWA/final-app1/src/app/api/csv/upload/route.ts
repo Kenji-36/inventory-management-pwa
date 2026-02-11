@@ -204,7 +204,7 @@ export async function POST(request: Request) {
             jan_code: product.JANコード,
             price_excluding_tax: product.税抜価格,
             price_including_tax: product.税込価格,
-          } as any)
+          })
           .eq('id', product.商品ID)
           .select();
 
@@ -225,7 +225,7 @@ export async function POST(request: Request) {
             jan_code: product.JANコード,
             price_excluding_tax: product.税抜価格,
             price_including_tax: product.税込価格,
-          } as any)
+          })
           .select()
           .single();
 
@@ -239,7 +239,7 @@ export async function POST(request: Request) {
           product_id: newProduct.id,
           quantity: 0,
           last_stocked_date: null,
-        } as any);
+        });
 
         addedCount++;
       }

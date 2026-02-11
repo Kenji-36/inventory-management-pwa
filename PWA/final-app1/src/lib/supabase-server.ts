@@ -33,14 +33,15 @@ export function getSupabaseServerClient() {
 
 /**
  * 便利なエクスポート（遅延評価）
+ * eslint-disable-next-line @typescript-eslint/no-explicit-any
  */
-let _supabaseServer: ReturnType<typeof createClient<Database>> | null = null;
+let _supabaseServer: any = null;
 
-export const supabaseServer = new Proxy({} as ReturnType<typeof createClient<Database>>, {
-  get(target, prop) {
+export const supabaseServer: any = new Proxy({}, {
+  get(_target, prop) {
     if (!_supabaseServer) {
       _supabaseServer = getSupabaseServerClient();
     }
-    return (_supabaseServer as any)[prop];
+    return _supabaseServer[prop];
   },
 });
