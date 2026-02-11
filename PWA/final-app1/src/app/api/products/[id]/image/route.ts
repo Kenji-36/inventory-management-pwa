@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { requireAuth } from "@/lib/api-auth";
 
 // 画像バリデーション設定
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -27,6 +28,11 @@ export async function POST(
         { success: false, error: "無効な商品IDです" },
         { status: 400 }
       );
+    }
+
+    const auth = await requireAuth();
+    if (!auth.authenticated) {
+      return auth.response;
     }
 
     // フォームデータを取得
@@ -172,6 +178,11 @@ export async function DELETE(
         { success: false, error: "無効な商品IDです" },
         { status: 400 }
       );
+    }
+
+    const auth = await requireAuth();
+    if (!auth.authenticated) {
+      return auth.response;
     }
 
     // 商品情報を取得

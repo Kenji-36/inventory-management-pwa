@@ -20,7 +20,7 @@ function getClient(): SupabaseClient<Database> {
       persistSession: typeof window !== "undefined",   // サーバーでは保存しない
       autoRefreshToken: typeof window !== "undefined",
       detectSessionInUrl: typeof window !== "undefined",
-      flowType: "implicit",
+      flowType: "pkce",
     },
   });
 

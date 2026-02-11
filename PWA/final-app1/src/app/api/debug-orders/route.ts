@@ -5,8 +5,18 @@
 
 import { NextResponse } from "next/server";
 import { getSheetData, SHEET_NAMES } from "@/lib/sheets";
+import { requireAdmin } from "@/lib/api-auth";
 
 export async function GET() {
+  // 本番環境ではアクセス不可
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  const adminResult = await requireAdmin();
+  if (!adminResult.authenticated) {
+    return adminResult.response;
+  }
+
   try {
     const ordersRaw = await getSheetData(SHEET_NAMES.ORDERS);
     

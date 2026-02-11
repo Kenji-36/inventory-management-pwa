@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { requireAuth } from "@/lib/api-auth";
 import type { Product } from "@/types";
 
 /**
@@ -11,6 +12,11 @@ import type { Product } from "@/types";
  */
 export async function GET(request: Request) {
   try {
+    const auth = await requireAuth();
+    if (!auth.authenticated) {
+      return auth.response;
+    }
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "template";
 

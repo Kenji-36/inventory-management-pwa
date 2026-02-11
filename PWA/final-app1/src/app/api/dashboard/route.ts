@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
-import { validateSession, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
+import { requireAuth, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
 import type { Order, OrderDetail, Product, Stock } from "@/types";
 
 interface DailySales {
@@ -52,18 +52,14 @@ interface DashboardData {
  */
 export async function GET() {
   try {
-    // セッション検証
-    const authResult = await validateSession();
-    if (!authResult.valid) {
-      console.warn('⚠️ 認証エラー:', authResult);
-      // 開発環境では警告のみで続行
-      console.log('🔓 開発環境のため続行します');
-    } else {
-      // レート制限チェック
-      const rateLimit = checkRateLimit(`dashboard-get-${authResult.user.email}`, 60);
-      if (!rateLimit.allowed) {
-        return rateLimitResponse(rateLimit.resetTime);
-      }
+    const auth = await requireAuth();
+    if (!auth.authenticated) {
+      return auth.response;
+    }
+    // レート制限チェック
+    const rateLimit = checkRateLimit(`dashboard-get-${auth.user.email}`, 60);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.resetTime);
     }
     
     // Supabaseから各テーブルのデータを取得

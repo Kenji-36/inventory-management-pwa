@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
 import { getSheetData, getGoogleSheetsClient, getSpreadsheetId, SHEET_NAMES } from "@/lib/sheets";
+import { requireAdmin } from "@/lib/api-auth";
 
 /**
  * Google Sheets API 接続テスト
  * GET /api/test-sheets
  */
 export async function GET() {
+  // 本番環境ではアクセス不可
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  const adminResult = await requireAdmin();
+  if (!adminResult.authenticated) {
+    return adminResult.response;
+  }
+
   try {
     // 環境変数のチェック
     const requiredEnvVars = [
@@ -51,7 +61,6 @@ export async function GET() {
       spreadsheetId: spreadsheetId,
       sheets: sheetNames,
       data: {
-        serviceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
         productCount: products.length,
       },
     });

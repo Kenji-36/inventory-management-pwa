@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
   // Turbopack設定（Next.js 16対応）
   turbopack: {},
 
-  // 外部画像の許可（Supabase Storage）
+  // 外部画像の許可（Supabase Storage）- 環境変数から動的に取得
   images: {
     remotePatterns: [
       {
@@ -32,6 +32,10 @@ const nextConfig: NextConfig = {
 
   // セキュリティヘッダー
   async headers() {
+    // Supabase URLからホスト名を取得
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://rboyrpltnaxcbqhrimwr.supabase.co';
+    const supabaseHost = new URL(supabaseUrl).hostname;
+
     return [
       {
         source: "/:path*",
@@ -58,11 +62,50 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Referrer-Policy",
-            value: "origin-when-cross-origin",
+            value: "strict-origin-when-cross-origin",
           },
           {
             key: "Permissions-Policy",
             value: "camera=(self), microphone=(), geolocation=()",
+          },
+          {
+            // Content Security Policy - XSS防御の中核
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              `img-src 'self' https://${supabaseHost} data: blob:`,
+              `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://accounts.google.com https://www.googleapis.com`,
+              "font-src 'self' data:",
+              "frame-src 'self' https://accounts.google.com",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'self'",
+            ].join("; "),
+          },
+        ],
+      },
+      {
+        // APIルートにCORS制限を設定
+        source: "/api/:path*",
+        headers: [
+          {
+            key: "Access-Control-Allow-Origin",
+            value: process.env.NEXT_PUBLIC_APP_URL || "https://inventory-management-pwa.vercel.app",
+          },
+          {
+            key: "Access-Control-Allow-Methods",
+            value: "GET, POST, PUT, DELETE, OPTIONS",
+          },
+          {
+            key: "Access-Control-Allow-Headers",
+            value: "Content-Type, Authorization",
+          },
+          {
+            key: "Access-Control-Max-Age",
+            value: "86400",
           },
         ],
       },

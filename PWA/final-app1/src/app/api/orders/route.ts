@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
-import { validateSession, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
+import { requireAuth, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
 import { validateOrderQuantity, validatePrice } from "@/lib/validation";
 import type { Order } from "@/types";
 
@@ -10,18 +10,14 @@ import type { Order } from "@/types";
  */
 export async function GET() {
   try {
-    // セッション検証
-    const authResult = await validateSession();
-    if (!authResult.valid) {
-      console.warn('⚠️ 認証エラー:', authResult);
-      // 開発環境では警告のみで続行
-      console.log('🔓 開発環境のため続行します');
-    } else {
-      // レート制限チェック
-      const rateLimit = checkRateLimit(`orders-get-${authResult.user.email}`, 60);
-      if (!rateLimit.allowed) {
-        return rateLimitResponse(rateLimit.resetTime);
-      }
+    const auth = await requireAuth();
+    if (!auth.authenticated) {
+      return auth.response;
+    }
+    // レート制限チェック
+    const rateLimit = checkRateLimit(`orders-get-${auth.user.email}`, 60);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.resetTime);
     }
     // Supabaseから注文情報を取得
     const { data: ordersData, error: ordersError } = await supabaseServer
@@ -61,18 +57,14 @@ export async function GET() {
  * - items: Array<{ productId, quantity, unitPriceExclTax, unitPriceInclTax }>
  */
 export async function POST(request: Request) {
-  // セッション検証
-  const authResult = await validateSession();
-  if (!authResult.valid) {
-    console.warn('⚠️ 認証エラー:', authResult);
-    // 開発環境では警告のみで続行
-    console.log('🔓 開発環境のため続行します');
-  } else {
-    // レート制限チェック（注文作成は厳しめに制限）
-    const rateLimit = checkRateLimit(`orders-post-${authResult.user.email}`, 10);
-    if (!rateLimit.allowed) {
-      return rateLimitResponse(rateLimit.resetTime);
-    }
+  const auth = await requireAuth();
+  if (!auth.authenticated) {
+    return auth.response;
+  }
+  // レート制限チェック（注文作成は厳しめに制限）
+  const rateLimit = checkRateLimit(`orders-post-${auth.user.email}`, 10);
+  if (!rateLimit.allowed) {
+    return rateLimitResponse(rateLimit.resetTime);
   }
 
   try {

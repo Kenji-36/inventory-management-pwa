@@ -5,8 +5,18 @@
 
 import { NextResponse } from "next/server";
 import { appendSheetData, getSheetData, SHEET_NAMES } from "@/lib/sheets";
+import { requireAdmin } from "@/lib/api-auth";
 
 export async function POST() {
+  // 本番環境ではアクセス不可
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  const adminResult = await requireAdmin();
+  if (!adminResult.authenticated) {
+    return adminResult.response;
+  }
+
   try {
     // 既存の注文IDを取得して最大値を確認
     const existingOrders = await getSheetData(SHEET_NAMES.ORDERS);
@@ -128,6 +138,15 @@ export async function POST() {
 
 // GETでデータ状況を確認
 export async function GET() {
+  // 本番環境ではアクセス不可
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  const adminResult = await requireAdmin();
+  if (!adminResult.authenticated) {
+    return adminResult.response;
+  }
+
   try {
     const orders = await getSheetData(SHEET_NAMES.ORDERS);
     const details = await getSheetData(SHEET_NAMES.ORDER_DETAILS);

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
-import { validateSession, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
+import { requireAuth, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
 import { validateStockQuantity } from "@/lib/validation";
 
 /**
@@ -8,17 +8,14 @@ import { validateStockQuantity } from "@/lib/validation";
  * GET /api/stock
  */
 export async function GET() {
-  // セッション検証
-  const authResult = await validateSession();
-  if (!authResult.valid) {
-    console.warn('⚠️ 認証エラー:', authResult);
-    console.log('🔓 開発環境のため続行します');
-  } else {
-    // レート制限チェック
-    const rateLimit = checkRateLimit(`stock-get-${authResult.user.email}`, 60);
-    if (!rateLimit.allowed) {
-      return rateLimitResponse(rateLimit.resetTime);
-    }
+  const auth = await requireAuth();
+  if (!auth.authenticated) {
+    return auth.response;
+  }
+  // レート制限チェック
+  const rateLimit = checkRateLimit(`stock-get-${auth.user.email}`, 60);
+  if (!rateLimit.allowed) {
+    return rateLimitResponse(rateLimit.resetTime);
   }
 
   try {
@@ -63,17 +60,14 @@ export async function GET() {
  * - mode: "set" (絶対値設定) または "add" (増減)
  */
 export async function PUT(request: Request) {
-  // セッション検証
-  const authResult = await validateSession();
-  if (!authResult.valid) {
-    console.warn('⚠️ 認証エラー:', authResult);
-    console.log('🔓 開発環境のため続行します');
-  } else {
-    // レート制限チェック（更新は厳しめに制限）
-    const rateLimit = checkRateLimit(`stock-put-${authResult.user.email}`, 30);
-    if (!rateLimit.allowed) {
-      return rateLimitResponse(rateLimit.resetTime);
-    }
+  const auth = await requireAuth();
+  if (!auth.authenticated) {
+    return auth.response;
+  }
+  // レート制限チェック（更新は厳しめに制限）
+  const rateLimit = checkRateLimit(`stock-put-${auth.user.email}`, 30);
+  if (!rateLimit.allowed) {
+    return rateLimitResponse(rateLimit.resetTime);
   }
 
   try {

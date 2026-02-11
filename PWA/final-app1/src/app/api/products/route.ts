@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
-import { validateSession, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
+import { requireAuth, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
 import { sanitizeString } from "@/lib/validation";
 import type { Product, Stock, ProductWithStock, ProductGroup } from "@/types";
 
@@ -16,18 +16,14 @@ import type { Product, Stock, ProductWithStock, ProductGroup } from "@/types";
  */
 export async function GET(request: Request) {
   try {
-    // セッション検証
-    const authResult = await validateSession();
-    if (!authResult.valid) {
-      console.warn('⚠️ 認証エラー:', authResult);
-      // 開発環境では警告のみで続行
-      console.log('🔓 開発環境のため続行します');
-    } else {
-      // レート制限チェック
-      const rateLimit = checkRateLimit(`products-get-${authResult.user.email}`, 60);
-      if (!rateLimit.allowed) {
-        return rateLimitResponse(rateLimit.resetTime);
-      }
+    const auth = await requireAuth();
+    if (!auth.authenticated) {
+      return auth.response;
+    }
+    // レート制限チェック
+    const rateLimit = checkRateLimit(`products-get-${auth.user.email}`, 60);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.resetTime);
     }
     const { searchParams } = new URL(request.url);
     const searchRaw = searchParams.get("search") || "";
@@ -150,18 +146,6 @@ export async function GET(request: Request) {
       throw productsError;
     }
 
-    // デバッグ: 最初の商品の在庫データを確認
-    if (productsData && productsData.length > 0) {
-      console.log('🔍 最初の商品データ:', {
-        id: productsData[0].id,
-        name: productsData[0].name,
-        stock: productsData[0].stock,
-        stockType: typeof productsData[0].stock,
-        isArray: Array.isArray(productsData[0].stock),
-        stockLength: productsData[0].stock?.length,
-      });
-    }
-
     // 型変換（Supabase → 既存の型）
     const productsWithStock: ProductWithStock[] = (productsData || []).map((p: any, index: number) => {
       // Supabaseのstockは配列またはオブジェクトの可能性がある
@@ -184,17 +168,6 @@ export async function GET(request: Request) {
         作成日: stockRecord.created_at,
         更新日: stockRecord.updated_at,
       } : null;
-
-      // デバッグ: 最初の3商品の在庫変換結果を確認
-      if (index < 3) {
-        console.log(`🔍 商品 ${p.id} (${p.name}) の在庫変換:`, {
-          rawStock: p.stock,
-          isArray: Array.isArray(p.stock),
-          stockRecord,
-          quantity: stockRecord?.quantity,
-          convertedStock: stockData,
-        });
-      }
 
       return {
         商品ID: p.id,
@@ -230,17 +203,6 @@ export async function GET(request: Request) {
         const code = product.商品コード;
         const stockQuantity = product.stock?.在庫数 || 0;
 
-        // デバッグ: 最初の3商品のグループ化処理を確認
-        if (index < 3) {
-          console.log(`🔍 グループ化 ${index + 1}:`, {
-            商品ID: product.商品ID,
-            商品名: product.商品名,
-            商品コード: code,
-            stock: product.stock,
-            在庫数: stockQuantity,
-          });
-        }
-
         if (groupMap.has(code)) {
           const group = groupMap.get(code)!;
           group.variants.push(product);
@@ -256,17 +218,6 @@ export async function GET(request: Request) {
       });
 
       const groupedData = Array.from(groupMap.values());
-
-      // デバッグ: 最初のグループの情報を確認
-      if (groupedData.length > 0) {
-        console.log('🔍 最初のグループ:', {
-          商品コード: groupedData[0].商品コード,
-          商品名: groupedData[0].商品名,
-          totalStock: groupedData[0].totalStock,
-          variants数: groupedData[0].variants.length,
-          最初のvariantの在庫: groupedData[0].variants[0]?.stock,
-        });
-      }
 
       return NextResponse.json({
         success: true,

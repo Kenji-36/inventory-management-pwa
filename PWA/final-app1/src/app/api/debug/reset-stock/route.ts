@@ -7,14 +7,16 @@
 
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { requireAdmin } from "@/lib/api-auth";
 
 export async function GET() {
-  // 開発環境のみ実行可能
-  if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json(
-      { success: false, error: "この機能は開発環境でのみ使用できます" },
-      { status: 403 }
-    );
+  // 本番環境ではアクセス不可
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  const adminResult = await requireAdmin();
+  if (!adminResult.authenticated) {
+    return adminResult.response;
   }
 
   try {

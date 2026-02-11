@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { requireAuth } from "@/lib/api-auth";
 import type { Order, OrderDetail, Product, OrderWithDetails } from "@/types";
 
 /**
@@ -19,6 +20,11 @@ export async function GET(
         { success: false, error: "無効な注文IDです" },
         { status: 400 }
       );
+    }
+
+    const auth = await requireAuth();
+    if (!auth.authenticated) {
+      return auth.response;
     }
 
     // Supabaseから注文と注文詳細を取得（JOINで一度に取得）

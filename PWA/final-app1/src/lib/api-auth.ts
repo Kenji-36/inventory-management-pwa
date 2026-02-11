@@ -1,19 +1,22 @@
 /**
  * API認証・認可ヘルパー（Supabase Auth版）
+ * セキュリティ強化版
  */
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { supabaseServer } from "@/lib/supabase-server";
 
 /**
  * APIルートでセッションを検証（Supabase Auth）
+ * getUser()を使用してJWTをサーバー側で検証（getSession()より安全）
  */
 export async function validateSession() {
   try {
     const cookieStore = await cookies();
     
-    // Supabase Server Clientを作成
+    // Supabase Server Clientを作成（anon keyで、RLS有効）
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -40,10 +43,10 @@ export async function validateSession() {
       }
     );
 
-    // Supabaseでセッションとユーザーを取得
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // getUser()でJWTをSupabaseサーバーに送信して検証（getSession()より安全）
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    if (sessionError || !session) {
+    if (userError || !user) {
       return {
         valid: false as const,
         response: NextResponse.json(
@@ -52,8 +55,6 @@ export async function validateSession() {
         ),
       };
     }
-
-    const user = session.user;
     
     return {
       valid: true as const,
@@ -77,7 +78,8 @@ export async function validateSession() {
 }
 
 /**
- * 管理者権限を検証（将来の拡張用）
+ * 管理者権限を検証
+ * usersテーブルのroleカラムを確認して管理者かどうかを判定
  */
 export async function validateAdminPermission() {
   const sessionResult = await validateSession();
@@ -85,15 +87,77 @@ export async function validateAdminPermission() {
   if (!sessionResult.valid) {
     return sessionResult;
   }
-  
-  // TODO: ユーザマスタから権限を取得して検証
-  // 現在は全ユーザーを管理者として扱う
-  
-  return sessionResult;
+
+  try {
+    // usersテーブルからroleを取得
+    const { data: userData, error: userError } = await supabaseServer
+      .from('users')
+      .select('role')
+      .eq('id', sessionResult.user.id)
+      .single();
+
+    if (userError || !userData) {
+      // usersテーブルにレコードがない場合はデフォルトで一般ユーザー扱い
+      return {
+        valid: true as const,
+        user: sessionResult.user,
+        isAdmin: false,
+      };
+    }
+
+    return {
+      valid: true as const,
+      user: sessionResult.user,
+      isAdmin: userData.role === 'admin',
+    };
+  } catch (error) {
+    console.error('権限チェックエラー:', error);
+    // エラー時は一般ユーザー扱い（安全側に倒す）
+    return {
+      valid: true as const,
+      user: sessionResult.user,
+      isAdmin: false,
+    };
+  }
+}
+
+/**
+ * 認証を強制するヘルパー
+ * 認証失敗時に401レスポンスを返す
+ */
+export async function requireAuth() {
+  const authResult = await validateSession();
+  if (!authResult.valid) {
+    return { authenticated: false as const, response: authResult.response };
+  }
+  return { authenticated: true as const, user: authResult.user };
+}
+
+/**
+ * 管理者認証を強制するヘルパー
+ * 管理者でない場合は403レスポンスを返す
+ */
+export async function requireAdmin() {
+  const authResult = await validateAdminPermission();
+  if (!authResult.valid) {
+    return { authenticated: false as const, response: authResult.response };
+  }
+  if (!authResult.isAdmin) {
+    return {
+      authenticated: false as const,
+      response: NextResponse.json(
+        { success: false, error: "管理者権限が必要です" },
+        { status: 403 }
+      ),
+    };
+  }
+  return { authenticated: true as const, user: authResult.user };
 }
 
 /**
  * レート制限チェック（簡易版）
+ * 注意: サーバーレス環境ではインスタンスごとにリセットされるため、
+ * 本番環境ではRedis等の外部ストアを推奨
  */
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
