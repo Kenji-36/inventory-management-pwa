@@ -85,7 +85,7 @@ export async function GET() {
     }
 
     // 型変換（Supabase → 既存の型）
-    const products: Product[] = (productsData || []).map((p) => ({
+    const products: Product[] = (productsData || []).map((p: any) => ({
       商品ID: p.id,
       商品名: p.name,
       画像URL: p.image_url || "",
@@ -98,7 +98,7 @@ export async function GET() {
       更新日: p.updated_at,
     }));
 
-    const stocks: Stock[] = (stockData || []).map((s) => ({
+    const stocks: Stock[] = (stockData || []).map((s: any) => ({
       在庫ID: s.id,
       商品ID: s.product_id,
       在庫数: s.quantity,
@@ -114,7 +114,7 @@ export async function GET() {
       return dateStr.split("T")[0];
     };
 
-    const orders: Order[] = (ordersData || []).map((o) => ({
+    const orders: Order[] = (ordersData || []).map((o: any) => ({
       注文ID: o.id,
       商品数: o.item_count,
       "注文金額(税抜)": o.total_price_excluding_tax,
@@ -122,7 +122,7 @@ export async function GET() {
       注文日: normalizeDate(o.order_date),
     }));
 
-    const details: OrderDetail[] = (detailsData || []).map((d) => ({
+    const details: OrderDetail[] = (detailsData || []).map((d: any) => ({
       明細ID: d.id,
       注文ID: d.order_id,
       商品ID: d.product_id,

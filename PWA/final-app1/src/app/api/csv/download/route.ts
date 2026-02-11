@@ -46,7 +46,7 @@ export async function GET(request: Request) {
         throw productsError;
       }
 
-      const products: Product[] = (productsData || []).map((p) => ({
+      const products: Product[] = (productsData || []).map((p: any) => ({
         商品ID: p.id,
         商品名: p.name,
         画像URL: p.image_url || "",
