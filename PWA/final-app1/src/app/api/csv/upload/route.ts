@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   }
 
   // レート制限チェック（CSV アップロードは厳しく制限）
-  const rateLimit = checkRateLimit(`csv-upload-${authResult.user.email}`, 5, 60000);
+  const rateLimit = await checkRateLimit(`csv-upload-${authResult.user.email}`, 5, 60000);
   if (!rateLimit.allowed) {
     return rateLimitResponse(rateLimit.resetTime);
   }

@@ -155,48 +155,11 @@ export async function requireAdmin() {
 }
 
 /**
- * レート制限チェック（簡易版）
- * 注意: サーバーレス環境ではインスタンスごとにリセットされるため、
- * 本番環境ではRedis等の外部ストアを推奨
+ * レート制限チェック
+ * Upstash Redisベース（本番環境）またはインメモリ（開発環境）
+ * 詳細は src/lib/rate-limit.ts を参照
  */
-const requestCounts = new Map<string, { count: number; resetTime: number }>();
-
-export function checkRateLimit(
-  identifier: string,
-  limit: number = 60,
-  windowMs: number = 60000
-): { allowed: boolean; remaining: number; resetTime: number } {
-  const now = Date.now();
-  const record = requestCounts.get(identifier);
-  
-  if (!record || now > record.resetTime) {
-    // 新しいウィンドウを開始
-    requestCounts.set(identifier, {
-      count: 1,
-      resetTime: now + windowMs,
-    });
-    return {
-      allowed: true,
-      remaining: limit - 1,
-      resetTime: now + windowMs,
-    };
-  }
-  
-  if (record.count >= limit) {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetTime: record.resetTime,
-    };
-  }
-  
-  record.count++;
-  return {
-    allowed: true,
-    remaining: limit - record.count,
-    resetTime: record.resetTime,
-  };
-}
+export { checkRateLimit } from "./rate-limit";
 
 /**
  * レート制限エラーレスポンス

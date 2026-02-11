@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       return auth.response;
     }
     // レート制限チェック
-    const rateLimit = checkRateLimit(`products-get-${auth.user.email}`, 60);
+    const rateLimit = await checkRateLimit(`products-get-${auth.user.email}`, 60);
     if (!rateLimit.allowed) {
       return rateLimitResponse(rateLimit.resetTime);
     }

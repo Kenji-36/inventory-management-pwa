@@ -57,7 +57,7 @@ export async function GET() {
       return auth.response;
     }
     // レート制限チェック
-    const rateLimit = checkRateLimit(`dashboard-get-${auth.user.email}`, 60);
+    const rateLimit = await checkRateLimit(`dashboard-get-${auth.user.email}`, 60);
     if (!rateLimit.allowed) {
       return rateLimitResponse(rateLimit.resetTime);
     }

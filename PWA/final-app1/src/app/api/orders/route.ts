@@ -15,7 +15,7 @@ export async function GET() {
       return auth.response;
     }
     // レート制限チェック
-    const rateLimit = checkRateLimit(`orders-get-${auth.user.email}`, 60);
+    const rateLimit = await checkRateLimit(`orders-get-${auth.user.email}`, 60);
     if (!rateLimit.allowed) {
       return rateLimitResponse(rateLimit.resetTime);
     }
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     return auth.response;
   }
   // レート制限チェック（注文作成は厳しめに制限）
-  const rateLimit = checkRateLimit(`orders-post-${auth.user.email}`, 10);
+  const rateLimit = await checkRateLimit(`orders-post-${auth.user.email}`, 10);
   if (!rateLimit.allowed) {
     return rateLimitResponse(rateLimit.resetTime);
   }
