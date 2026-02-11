@@ -163,7 +163,7 @@ export async function GET(request: Request) {
     }
 
     // 型変換（Supabase → 既存の型）
-    const productsWithStock: ProductWithStock[] = (productsData || []).map((p, index) => {
+    const productsWithStock: ProductWithStock[] = (productsData || []).map((p: any, index: number) => {
       // Supabaseのstockは配列またはオブジェクトの可能性がある
       let stockRecord = null;
       if (p.stock) {

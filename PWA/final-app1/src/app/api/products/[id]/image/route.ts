@@ -81,7 +81,7 @@ export async function POST(
 
     // バケットの存在確認と自動作成
     const { data: buckets } = await supabaseServer.storage.listBuckets();
-    const bucketExists = buckets?.some(b => b.name === BUCKET_NAME);
+    const bucketExists = buckets?.some((b: any) => b.name === BUCKET_NAME);
     if (!bucketExists) {
       console.log(`バケット '${BUCKET_NAME}' が存在しないため作成します`);
       const { error: createBucketError } = await supabaseServer.storage.createBucket(BUCKET_NAME, {

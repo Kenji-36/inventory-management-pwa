@@ -34,7 +34,7 @@ export async function GET() {
     }
 
     // 型変換（Supabase → 既存の型）
-    const orders: Order[] = (ordersData || []).map((o) => ({
+    const orders: Order[] = (ordersData || []).map((o: any) => ({
       注文ID: o.id,
       商品数: o.item_count,
       "注文金額(税抜)": o.total_price_excluding_tax,

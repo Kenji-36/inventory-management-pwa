@@ -45,7 +45,7 @@ export async function GET() {
     };
 
     // 正規化後のデータ
-    const normalizedSample = ordersRaw.slice(0, 10).map(o => ({
+    const normalizedSample = ordersRaw.slice(0, 10).map((o: any) => ({
       注文ID: o["注文ID"],
       商品数: o["商品数"],
       "注文金額(税抜)_raw": o["注文金額(税抜)"],

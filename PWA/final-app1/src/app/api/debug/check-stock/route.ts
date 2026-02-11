@@ -49,9 +49,9 @@ export async function GET() {
     const stats = {
       stock: {
         total: stockData?.length || 0,
-        totalQuantity: stockData?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0,
-        withStock: stockData?.filter(s => s.quantity > 0).length || 0,
-        zeroStock: stockData?.filter(s => s.quantity === 0).length || 0,
+        totalQuantity: stockData?.reduce((sum: number, s: any) => sum + (s.quantity || 0), 0) || 0,
+        withStock: stockData?.filter((s: any) => s.quantity > 0).length || 0,
+        zeroStock: stockData?.filter((s: any) => s.quantity === 0).length || 0,
       },
       products: {
         total: productsData?.length || 0,
@@ -61,7 +61,7 @@ export async function GET() {
     console.log('📊 統計:', stats);
 
     // 4. 在庫データのサンプル（最初の10件）
-    const stockSamples = stockData?.slice(0, 10).map(s => ({
+    const stockSamples = stockData?.slice(0, 10).map((s: any) => ({
       id: s.id,
       product_id: s.product_id,
       quantity: s.quantity,
@@ -69,7 +69,7 @@ export async function GET() {
     }));
 
     // 5. 商品データのサンプル（最初の5件）
-    const productSamples = productsData?.slice(0, 5).map(p => ({
+    const productSamples = productsData?.slice(0, 5).map((p: any) => ({
       id: p.id,
       name: p.name,
       size: p.size,

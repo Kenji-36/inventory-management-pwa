@@ -33,7 +33,7 @@ export async function GET() {
     }
 
     // 型変換（Supabase → 既存の型）
-    const stocks = (stockData || []).map((s) => ({
+    const stocks = (stockData || []).map((s: any) => ({
       在庫ID: s.id,
       商品ID: s.product_id,
       在庫数: s.quantity,

@@ -113,7 +113,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     if (product) {
       setProduct({
         ...product,
-        画像URL: null,
+        画像URL: "",
       });
     }
   };

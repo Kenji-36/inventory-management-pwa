@@ -27,7 +27,7 @@ export async function GET() {
 
     console.log('📊 リセット前:', {
       total: beforeData?.length || 0,
-      totalStock: beforeData?.reduce((sum, s) => sum + s.quantity, 0) || 0,
+      totalStock: beforeData?.reduce((sum: number, s: any) => sum + s.quantity, 0) || 0,
     });
 
     // 2. 全ての商品を取得
@@ -43,13 +43,13 @@ export async function GET() {
     console.log('📦 商品数:', products?.length || 0);
 
     // 3. 在庫レコードが存在しない商品に対して在庫を作成
-    const existingProductIds = new Set(beforeData?.map(s => s.product_id) || []);
-    const missingProducts = products?.filter(p => !existingProductIds.has(p.id)) || [];
+    const existingProductIds = new Set(beforeData?.map((s: any) => s.product_id) || []);
+    const missingProducts = products?.filter((p: any) => !existingProductIds.has(p.id)) || [];
 
     console.log('🆕 在庫レコードが存在しない商品数:', missingProducts.length);
 
     if (missingProducts.length > 0) {
-      const newStockRecords = missingProducts.map(p => ({
+      const newStockRecords = missingProducts.map((p: any) => ({
         product_id: p.id,
         quantity: 10,
         updated_at: new Date().toISOString(),
@@ -90,7 +90,7 @@ export async function GET() {
 
     console.log('📊 リセット後:', {
       total: afterData?.length || 0,
-      totalStock: afterData?.reduce((sum, s) => sum + s.quantity, 0) || 0,
+      totalStock: afterData?.reduce((sum: number, s: any) => sum + s.quantity, 0) || 0,
     });
 
     // 6. 詳細を返す
@@ -103,14 +103,14 @@ export async function GET() {
         },
         before: {
           count: beforeData?.length || 0,
-          totalStock: beforeData?.reduce((sum, s) => sum + s.quantity, 0) || 0,
+          totalStock: beforeData?.reduce((sum: number, s: any) => sum + s.quantity, 0) || 0,
         },
         created: {
           count: missingProducts.length,
         },
         after: {
           count: afterData?.length || 0,
-          totalStock: afterData?.reduce((sum, s) => sum + s.quantity, 0) || 0,
+          totalStock: afterData?.reduce((sum: number, s: any) => sum + s.quantity, 0) || 0,
         },
         samples: afterData?.slice(0, 10),
       },

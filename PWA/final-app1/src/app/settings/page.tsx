@@ -6,7 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Database, Bell, Shield, TestTube, Loader2, RefreshCw, CheckCircle, XCircle } from "lucide-react";
+import { User as UserIcon, Database, Bell, Shield, TestTube, Loader2, RefreshCw, CheckCircle, XCircle } from "lucide-react";
 
 interface DbStatus {
   connected: boolean;
@@ -128,7 +128,7 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
-                <User className="h-5 w-5 text-primary" />
+                <UserIcon className="h-5 w-5 text-primary" />
                 <CardTitle>アカウント情報</CardTitle>
               </div>
               <CardDescription>

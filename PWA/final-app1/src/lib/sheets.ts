@@ -56,9 +56,9 @@ export async function getSheetData(sheetName: string) {
   const headers = rows[0];
   
   // データ行をオブジェクトに変換
-  return rows.slice(1).map((row) => {
+  return rows.slice(1).map((row: any) => {
     const obj: Record<string, string | number> = {};
-    headers.forEach((header, index) => {
+    headers.forEach((header: any, index: any) => {
       obj[header] = row[index] || "";
     });
     return obj;
@@ -154,7 +154,7 @@ export async function findAndUpdateRow(
   }
 
   // 更新データを配列に変換
-  const updateRow = headers.map((header) => {
+  const updateRow = headers.map((header: any) => {
     if (header in updateData) {
       return updateData[header];
     }

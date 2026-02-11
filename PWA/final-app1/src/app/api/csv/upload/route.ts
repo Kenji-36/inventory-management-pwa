@@ -98,7 +98,7 @@ export async function POST(request: Request) {
 
     // ヘッダー検証
     const missingHeaders = expectedHeaders.filter(
-      (h) => !headers.includes(h)
+      (h: any) => !headers.includes(h)
     );
     if (missingHeaders.length > 0) {
       return NextResponse.json(
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
       const values = parseCSVLine(lines[i]);
       const row: Record<string, string> = {};
       
-      headers.forEach((header, index) => {
+      headers.forEach((header: any, index: any) => {
         row[header] = values[index] || "";
       });
 
@@ -152,7 +152,7 @@ export async function POST(request: Request) {
         errors.push({ row: rowNum, field: "税込価格", message: "税込価格は数値で入力してください" });
       }
 
-      if (errors.filter((e) => e.row === rowNum).length === 0) {
+      if (errors.filter((e: any) => e.row === rowNum).length === 0) {
         const product = {
           商品ID: row["商品ID"] ? Number(row["商品ID"]) : undefined,
           商品名: sanitizeString(row["商品名"]),
@@ -167,7 +167,7 @@ export async function POST(request: Request) {
         // 商品データの詳細検証
         const productValidation = validateProduct(product);
         if (!productValidation.valid) {
-          productValidation.errors.forEach((err) => {
+          productValidation.errors.forEach((err: any) => {
             errors.push({ row: rowNum, field: "商品データ", message: err });
           });
         } else {

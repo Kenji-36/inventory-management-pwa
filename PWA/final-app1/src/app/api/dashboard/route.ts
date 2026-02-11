@@ -163,27 +163,27 @@ export async function GET() {
       .reduce((sum, o) => sum + o["注文金額(税込)"], 0);
 
     // デバッグ用: 注文データの日付を確認
-    console.log("Orders dates:", orders.slice(0, 5).map(o => ({ id: o.注文ID, date: o.注文日, amount: o["注文金額(税込)"] })));
+    console.log("Orders dates:", orders.slice(0, 5).map((o: Order) => ({ id: o.注文ID, date: o.注文日, amount: o["注文金額(税込)"] })));
 
     // 売上推移（直近30日）
     const salesTrend: DailySales[] = [];
     for (let i = 29; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
       const dateStr = date.toISOString().split("T")[0];
-      const dayOrders = orders.filter((o) => o.注文日 === dateStr);
+      const dayOrders = orders.filter((o: Order) => o.注文日 === dateStr);
 
       salesTrend.push({
         date: dateStr,
         totalOrders: dayOrders.length,
-        totalSalesExclTax: dayOrders.reduce((sum, o) => sum + o["注文金額(税抜)"], 0),
-        totalSalesInclTax: dayOrders.reduce((sum, o) => sum + o["注文金額(税込)"], 0),
+        totalSalesExclTax: dayOrders.reduce((sum: number, o: Order) => sum + o["注文金額(税抜)"], 0),
+        totalSalesInclTax: dayOrders.reduce((sum: number, o: Order) => sum + o["注文金額(税込)"], 0),
       });
     }
 
     // 商品別売上ランキング
     const productSalesMap = new Map<number, ProductSales>();
-    details.forEach((d) => {
-      const product = products.find((p) => p.商品ID === d.商品ID);
+    details.forEach((d: OrderDetail) => {
+      const product = products.find((p: Product) => p.商品ID === d.商品ID);
       if (!product) return;
 
       const existing = productSalesMap.get(d.商品ID);
@@ -203,14 +203,14 @@ export async function GET() {
     });
 
     const topProducts = Array.from(productSalesMap.values())
-      .sort((a, b) => b.totalSales - a.totalSales)
+      .sort((a: any, b: any) => b.totalSales - a.totalSales)
       .slice(0, 10);
 
     // 在庫アラート商品
     const stockAlerts = stocks
-      .filter((s) => s.在庫数 < 3)
-      .map((s) => {
-        const product = products.find((p) => p.商品ID === s.商品ID);
+      .filter((s: Stock) => s.在庫数 < 3)
+      .map((s: Stock) => {
+        const product = products.find((p: Product) => p.商品ID === s.商品ID);
         return {
           productId: s.商品ID,
           productName: product?.商品名 || "不明",
@@ -218,7 +218,7 @@ export async function GET() {
           stock: s.在庫数,
         };
       })
-      .sort((a, b) => a.stock - b.stock)
+      .sort((a: any, b: any) => a.stock - b.stock)
       .slice(0, 10);
 
     const dashboardData: DashboardData = {

@@ -37,7 +37,7 @@ export default function InventoryPage() {
 
   // リアルタイム在庫更新
   const { isConnected } = useRealtimeStock(
-    useCallback((update) => {
+    useCallback((update: any) => {
       console.log('Stock updated:', update);
       info("在庫が更新されました", `商品ID: ${update.product_id} の在庫が ${update.quantity} に変更されました`);
       // データを再取得
