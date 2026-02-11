@@ -5,8 +5,8 @@ import { createServerClient } from "@supabase/ssr";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 静的ファイルのパス
-  const isStaticPath =
+  // 静的ファイル・公開パスは常に許可
+  const isPublicPath =
     pathname.startsWith("/_next") ||
     pathname.startsWith("/icons") ||
     pathname === "/favicon.ico" ||
@@ -14,48 +14,18 @@ export async function middleware(request: NextRequest) {
     pathname === "/sw.js" ||
     pathname === "/offline";
 
-  // 静的ファイルは常に許可
-  if (isStaticPath) {
+  if (isPublicPath) {
     return NextResponse.next();
   }
 
-  // API認証パスは常に許可
+  // 認証関連パスは常に許可（OAuthコールバック含む）
   if (pathname.startsWith("/api/auth")) {
     return NextResponse.next();
   }
 
-  // ログインページは常に許可
+  // ログインページは常に許可（認証チェック不要）
   if (pathname === "/login") {
-    // レスポンスを先に作成してからチェック
-    let response = NextResponse.next({
-      request: { headers: request.headers },
-    });
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-          set(name: string, value: string, options: any) {
-            response.cookies.set({ name, value, ...options });
-          },
-          remove(name: string, options: any) {
-            response.cookies.set({ name, value: '', ...options });
-          },
-        },
-      }
-    );
-
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    // ログイン済みならダッシュボードにリダイレクト
-    if (user) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-    return response;
+    return NextResponse.next();
   }
 
   // レスポンスを作成
@@ -83,9 +53,9 @@ export async function middleware(request: NextRequest) {
   );
 
   // getUser()でJWTを検証（getSession()より安全）
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error } = await supabase.auth.getUser();
 
-  // APIルートの場合は401を返す（ページ遷移ではなく）
+  // APIルートの場合は401を返す（リダイレクトではなく）
   if (pathname.startsWith("/api/")) {
     if (!user) {
       return NextResponse.json(
