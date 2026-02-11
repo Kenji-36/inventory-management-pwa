@@ -58,11 +58,11 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* ロゴ */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-shadow">
+            <div className="w-10 h-10 rounded-xl bg-gray-600 flex items-center justify-center shadow-md group-hover:bg-gray-700 transition-all">
               <Boxes className="h-5 w-5 text-white" />
             </div>
             <div className="hidden sm:block">
-              <span className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              <span className="text-lg font-bold text-gray-800">
                 在庫管理
               </span>
               <span className="text-xs text-gray-400 block -mt-0.5">Inventory System</span>
@@ -80,13 +80,13 @@ export function Header() {
                   className={cn(
                     "flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200",
                     isActive
-                      ? "bg-white text-primary shadow-sm"
+                      ? "bg-white text-gray-800 shadow-sm"
                       : "text-gray-600 hover:text-gray-900"
                   )}
                 >
                   <item.icon className={cn(
                     "h-4 w-4 mr-2 transition-colors",
-                    isActive ? "text-primary" : "text-gray-400"
+                    isActive ? "text-gray-700" : "text-gray-400"
                   )} />
                   {item.name}
                 </Link>
@@ -148,14 +148,14 @@ export function Header() {
                     className={cn(
                       "flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all",
                       isActive
-                        ? "bg-primary/10 text-primary"
+                        ? "bg-gray-100 text-gray-800"
                         : "text-gray-600 hover:bg-gray-100"
                     )}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <item.icon className={cn(
                       "h-5 w-5 mr-3",
-                      isActive ? "text-primary" : "text-gray-400"
+                      isActive ? "text-gray-700" : "text-gray-400"
                     )} />
                     {item.name}
                   </Link>

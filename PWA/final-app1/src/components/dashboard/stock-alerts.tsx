@@ -22,10 +22,10 @@ export function StockAlerts({ alerts }: StockAlertsProps) {
 
   if (alerts.length === 0) {
     return (
-      <Card className="border-0 shadow-lg overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b">
+      <Card className="border border-gray-200 shadow-sm overflow-hidden">
+        <CardHeader className="bg-gray-50 border-b border-gray-200">
           <CardTitle className="flex items-center gap-3 text-lg">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gray-400 flex items-center justify-center">
               <CheckCircle2 className="w-5 h-5 text-white" />
             </div>
             在庫アラート
@@ -33,10 +33,10 @@ export function StockAlerts({ alerts }: StockAlertsProps) {
         </CardHeader>
         <CardContent className="py-12">
           <div className="flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center mb-4">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+            <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-gray-300 flex items-center justify-center mb-4">
+              <CheckCircle2 className="w-10 h-10 text-gray-500" />
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">在庫状況は良好です</h3>
+            <h3 className="font-semibold text-gray-700 mb-1">在庫状況は良好です</h3>
             <p className="text-sm text-gray-500">
               在庫切れ・在庫少の商品はありません
             </p>
@@ -47,15 +47,13 @@ export function StockAlerts({ alerts }: StockAlertsProps) {
   }
 
   return (
-    <Card className="border-0 shadow-lg overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b">
+    <Card className="border border-gray-200 shadow-sm overflow-hidden">
+      <CardHeader className="bg-gray-50 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-3 text-lg">
             <div className={cn(
               "w-10 h-10 rounded-xl flex items-center justify-center",
-              outOfStock > 0 
-                ? "bg-gradient-to-br from-red-400 to-rose-500" 
-                : "bg-gradient-to-br from-orange-400 to-amber-500"
+              outOfStock > 0 ? "bg-red-500" : "bg-amber-500"
             )}>
               <AlertTriangle className="w-5 h-5 text-white" />
             </div>
@@ -63,10 +61,10 @@ export function StockAlerts({ alerts }: StockAlertsProps) {
           </CardTitle>
           <div className="flex gap-2">
             {outOfStock > 0 && (
-              <span className="badge badge-danger">{outOfStock} 在庫切れ</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">{outOfStock} 在庫切れ</span>
             )}
             {lowStock > 0 && (
-              <span className="badge badge-warning">{lowStock} 残少</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-500 text-white">{lowStock} 残少</span>
             )}
           </div>
         </div>
@@ -77,18 +75,14 @@ export function StockAlerts({ alerts }: StockAlertsProps) {
             <div
               key={alert.productId}
               className={cn(
-                "flex items-center gap-4 p-4 hover:bg-gray-50/50 transition-colors fade-in",
-                alert.stock === 0 
-                  ? "bg-gradient-to-r from-red-50/50 to-transparent" 
-                  : "bg-gradient-to-r from-orange-50/30 to-transparent"
+                "flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors fade-in",
+                alert.stock === 0 ? "bg-red-50/30" : "bg-amber-50/30"
               )}
               style={{ animationDelay: `${index * 30}ms` }}
             >
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center",
-                alert.stock === 0 
-                  ? "bg-red-100 text-red-600" 
-                  : "bg-orange-100 text-orange-600"
+                alert.stock === 0 ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"
               )}>
                 {alert.stock === 0 ? (
                   <AlertCircle className="w-5 h-5" />
@@ -97,17 +91,13 @@ export function StockAlerts({ alerts }: StockAlertsProps) {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-gray-900 truncate">{alert.productName}</div>
+                <div className="font-medium text-gray-700 truncate">{alert.productName}</div>
                 <div className="text-sm text-gray-500">サイズ: {alert.size}</div>
               </div>
-              <div
-                className={cn(
-                  "px-3 py-1.5 rounded-lg font-semibold text-sm",
-                  alert.stock === 0 
-                    ? "bg-red-100 text-red-700" 
-                    : "bg-orange-100 text-orange-700"
-                )}
-              >
+              <div className={cn(
+                "px-3 py-1.5 rounded-lg font-semibold text-sm",
+                alert.stock === 0 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+              )}>
                 {alert.stock === 0 ? "在庫切れ" : `残り ${alert.stock}個`}
               </div>
             </div>
@@ -116,7 +106,7 @@ export function StockAlerts({ alerts }: StockAlertsProps) {
         <div className="p-4 border-t bg-gray-50/50">
           <Link
             href="/inventory"
-            className="flex items-center justify-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            className="flex items-center justify-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
           >
             在庫管理画面で確認
             <ArrowRight className="w-4 h-4" />

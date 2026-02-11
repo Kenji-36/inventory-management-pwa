@@ -99,6 +99,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // GETリクエスト以外はキャッシュしない
+  if (request.method !== 'GET') {
+    return;
+  }
+
   // 通常のページリクエスト: Network First戦略
   event.respondWith(
     fetch(request)

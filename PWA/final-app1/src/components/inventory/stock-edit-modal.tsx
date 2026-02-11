@@ -39,22 +39,22 @@ export function StockEditModal({
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md bg-white shadow-2xl border-2 border-gray-200">
-        <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-t-lg pb-4">
-          <CardTitle className="text-white font-bold">在庫数を編集</CardTitle>
+      <Card className="w-full max-w-md bg-white shadow-2xl border-2 border-gray-300">
+        <CardHeader className="flex flex-row items-center justify-between bg-gray-200 rounded-t-lg pb-4">
+          <CardTitle className="text-gray-800 font-bold">在庫数を編集</CardTitle>
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={onClose}
-            className="text-white hover:bg-white/20 rounded-full"
+            className="text-gray-600 hover:bg-gray-300 rounded-full"
           >
             <X className="w-5 h-5" />
           </Button>
         </CardHeader>
         <CardContent className="space-y-6 bg-white p-6">
           {/* 商品情報 */}
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-5 shadow-sm">
-            <div className="font-bold text-gray-900 text-lg">{product.商品名}</div>
+          <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-5">
+            <div className="font-bold text-gray-700 text-lg">{product.商品名}</div>
             <div className="text-sm text-gray-600 mt-2 space-y-1">
               <div className="flex items-center gap-2">
                 <span className="font-medium">サイズ:</span>
@@ -66,7 +66,7 @@ export function StockEditModal({
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium">価格:</span>
-                <span className="text-emerald-700 font-bold">¥{product.税込価格.toLocaleString()}</span>
+                <span className="text-gray-700 font-bold">¥{product.税込価格.toLocaleString()}</span>
                 <span className="text-xs text-gray-500">（税込）</span>
               </div>
             </div>
@@ -83,7 +83,7 @@ export function StockEditModal({
                 size="icon"
                 onClick={decrement}
                 disabled={quantity <= 0}
-                className="h-12 w-12 rounded-full border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 disabled:opacity-30"
+                className="h-12 w-12 rounded-full border-2 border-gray-300 hover:border-gray-500 hover:bg-gray-100 disabled:opacity-30"
               >
                 <Minus className="w-5 h-5" />
               </Button>
@@ -102,16 +102,16 @@ export function StockEditModal({
                 variant="outline" 
                 size="icon" 
                 onClick={increment}
-                className="h-12 w-12 rounded-full border-2 border-gray-300 hover:border-green-500 hover:bg-green-50"
+                className="h-12 w-12 rounded-full border-2 border-gray-300 hover:border-gray-500 hover:bg-gray-100"
               >
                 <Plus className="w-5 h-5" />
               </Button>
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-              <p className="text-sm text-blue-800 text-center font-medium">
+            <div className="bg-gray-100 border border-gray-300 rounded-lg p-3 mt-4">
+              <p className="text-sm text-gray-700 text-center font-medium">
                 現在の在庫: <span className="font-bold">{product.stock?.在庫数 || 0}</span> 
                 <span className="mx-2">→</span>
-                <span className="font-bold text-blue-600 text-lg">{quantity}</span>
+                <span className="font-bold text-gray-700 text-lg">{quantity}</span>
               </p>
             </div>
           </div>
@@ -127,7 +127,7 @@ export function StockEditModal({
               キャンセル
             </Button>
             <Button
-              className="flex-1 h-12 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold shadow-lg"
+              className="flex-1 h-12 bg-gray-500 hover:bg-gray-600 text-white font-bold"
               onClick={handleSave}
               disabled={isLoading}
             >

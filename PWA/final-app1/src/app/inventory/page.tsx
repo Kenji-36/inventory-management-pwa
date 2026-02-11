@@ -153,38 +153,38 @@ export default function InventoryPage() {
     <AppLayout>
       {/* Hero Section - Sticky */}
       <div className="sticky top-0 z-40 bg-gray-50 container mx-auto px-4 pt-4 pb-2">
-        <div className="relative overflow-hidden rounded-xl bg-emerald-600 px-6 py-4 text-white shadow-lg">
+        <div className="relative overflow-hidden rounded-xl bg-gray-100 px-6 py-4 shadow-lg border border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Boxes className="w-5 h-5" />
-              <h1 className="text-xl font-bold">在庫管理</h1>
+              <Boxes className="w-5 h-5 text-gray-600" />
+              <h1 className="text-xl font-bold text-gray-800">在庫管理</h1>
             </div>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-6 text-sm">
                 <div>
-                  <span className="text-white/70">商品グループ</span>
-                  <span className="ml-2 font-semibold">{stats.totalGroups}</span>
+                  <span className="text-gray-500">商品グループ</span>
+                  <span className="ml-2 font-semibold text-gray-800">{stats.totalGroups}</span>
                 </div>
                 <div>
-                  <span className="text-white/70">総SKU数</span>
-                  <span className="ml-2 font-semibold">{stats.totalProducts}</span>
+                  <span className="text-gray-500">総SKU数</span>
+                  <span className="ml-2 font-semibold text-gray-800">{stats.totalProducts}</span>
                 </div>
                 <div>
-                  <span className="text-white/70">総在庫数</span>
-                  <span className="ml-2 font-semibold">{stats.totalStock.toLocaleString()}</span>
+                  <span className="text-gray-500">総在庫数</span>
+                  <span className="ml-2 font-semibold text-gray-800">{stats.totalStock.toLocaleString()}</span>
                 </div>
                 <div>
-                  <span className="text-white/70">在庫アラート</span>
-                  <span className="ml-2 font-semibold flex items-center gap-1">
+                  <span className="text-gray-500">在庫アラート</span>
+                  <span className="ml-2 font-semibold text-gray-800 flex items-center gap-1">
                     {stats.lowStock}
-                    {stats.lowStock > 0 && <AlertCircle className="w-4 h-4 text-yellow-300" />}
+                    {stats.lowStock > 0 && <AlertCircle className="w-4 h-4 text-gray-500" />}
                   </span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 {isConnected && (
-                  <div className="flex items-center gap-1 text-xs text-white/70">
-                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                  <div className="flex items-center gap-1 text-xs text-gray-600">
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" />
                     <span>リアルタイム</span>
                   </div>
                 )}
@@ -193,7 +193,7 @@ export default function InventoryPage() {
                   size="sm"
                   onClick={() => fetchProducts(searchTerm)}
                   disabled={isLoading}
-                  className="bg-white/20 hover:bg-white/30 text-white border-0 h-8"
+                  className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 h-8"
                 >
                   <RefreshCw className={`w-3 h-3 mr-1 ${isLoading ? "animate-spin" : ""}`} />
                   更新
@@ -207,7 +207,7 @@ export default function InventoryPage() {
       {/* Scrollable Content */}
       <div className="container mx-auto px-4 space-y-6 pb-8">
         {/* Search & Action Bar */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-5">
             <div className="flex flex-col lg:flex-row gap-4">
               {/* 検索 */}
@@ -218,7 +218,7 @@ export default function InventoryPage() {
                   name="search"
                   type="search"
                   placeholder="商品名、商品コード、JANコードで検索..."
-                  className="pl-12 h-12 text-base bg-gray-50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary/20"
+                  className="pl-12 h-12 text-base bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -228,7 +228,7 @@ export default function InventoryPage() {
               <div className="flex gap-3">
                 <Button
                   onClick={() => setShowScanner(true)}
-                  className="h-12 px-5 gradient-primary border-0 rounded-xl gap-2"
+                  className="h-12 px-5 bg-gray-500 hover:bg-gray-600 text-white border-0 rounded-xl gap-2"
                 >
                   <ScanLine className="w-5 h-5" />
                   <span className="hidden sm:inline">スキャン入庫</span>
@@ -236,7 +236,7 @@ export default function InventoryPage() {
                 <Button
                   variant="outline"
                   onClick={() => window.location.href = "/api/csv/download?type=data"}
-                  className="h-12 px-4 rounded-xl gap-2"
+                  className="h-12 px-4 rounded-xl gap-2 border-gray-300 hover:bg-gray-50"
                 >
                   <Download className="w-5 h-5" />
                   <span className="hidden sm:inline">CSV出力</span>
@@ -244,7 +244,7 @@ export default function InventoryPage() {
                 <Button
                   variant="outline"
                   onClick={() => setShowCsvUpload(true)}
-                  className="h-12 px-4 rounded-xl gap-2"
+                  className="h-12 px-4 rounded-xl gap-2 border-gray-300 hover:bg-gray-50"
                 >
                   <Upload className="w-5 h-5" />
                   <span className="hidden sm:inline">CSV入力</span>

@@ -70,29 +70,29 @@ export default function OrdersPage() {
     <AppLayout>
       {/* Hero Section - Sticky */}
       <div className="sticky top-0 z-40 bg-gray-50 container mx-auto px-4 pt-4 pb-2">
-        <div className="relative overflow-hidden rounded-xl bg-gray-700 px-6 py-4 text-white shadow-lg">
+        <div className="relative overflow-hidden rounded-xl bg-gray-100 px-6 py-4 shadow-lg border border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <ShoppingCart className="w-5 h-5" />
-              <h1 className="text-xl font-bold">注文管理</h1>
+              <ShoppingCart className="w-5 h-5 text-gray-600" />
+              <h1 className="text-xl font-bold text-gray-800">注文管理</h1>
             </div>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-6 text-sm">
                 <div>
-                  <span className="text-white/70">総注文数</span>
-                  <span className="ml-2 font-semibold">{stats.totalOrders}件</span>
+                  <span className="text-gray-500">総注文数</span>
+                  <span className="ml-2 font-semibold text-gray-800">{stats.totalOrders}件</span>
                 </div>
                 <div>
-                  <span className="text-white/70">本日の注文</span>
-                  <span className="ml-2 font-semibold">{stats.todayOrders}件</span>
+                  <span className="text-gray-500">本日の注文</span>
+                  <span className="ml-2 font-semibold text-gray-800">{stats.todayOrders}件</span>
                 </div>
                 <div>
-                  <span className="text-white/70">総売上</span>
-                  <span className="ml-2 font-semibold">¥{(stats.totalSales / 1000).toFixed(0)}k</span>
+                  <span className="text-gray-500">総売上</span>
+                  <span className="ml-2 font-semibold text-gray-800">¥{(stats.totalSales / 1000).toFixed(0)}k</span>
                 </div>
                 <div>
-                  <span className="text-white/70">平均注文額</span>
-                  <span className="ml-2 font-semibold">¥{stats.avgOrderValue.toLocaleString()}</span>
+                  <span className="text-gray-500">平均注文額</span>
+                  <span className="ml-2 font-semibold text-gray-800">¥{stats.avgOrderValue.toLocaleString()}</span>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -101,13 +101,13 @@ export default function OrdersPage() {
                   size="sm"
                   onClick={fetchOrders}
                   disabled={isLoading}
-                  className="bg-white/10 hover:bg-white/20 text-white border-0 h-8"
+                  className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 h-8"
                 >
                   <RefreshCw className={`w-3 h-3 mr-1 ${isLoading ? "animate-spin" : ""}`} />
                   更新
                 </Button>
                 <Link href="/orders/new">
-                  <Button size="sm" className="bg-white text-gray-800 hover:bg-gray-100 border-0 h-8">
+                  <Button size="sm" className="bg-gray-500 text-white hover:bg-gray-600 border-0 h-8">
                     <Plus className="w-3 h-3 mr-1" />
                     新規注文
                   </Button>
@@ -122,43 +122,43 @@ export default function OrdersPage() {
       <div className="container mx-auto px-4 space-y-6 pb-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="border-0 shadow-lg card-hover overflow-hidden">
+          <Card className="border border-gray-200 shadow-sm card-hover overflow-hidden">
             <CardContent className="p-5">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-gray-400 flex items-center justify-center">
                   <ShoppingCart className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">総注文数</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}件</p>
+                  <p className="text-2xl font-bold text-gray-700">{stats.totalOrders}件</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg card-hover overflow-hidden">
+          <Card className="border border-gray-200 shadow-sm card-hover overflow-hidden">
             <CardContent className="p-5">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-gray-400 flex items-center justify-center">
                   <Calendar className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">本日の注文</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.todayOrders}件</p>
+                  <p className="text-2xl font-bold text-gray-700">{stats.todayOrders}件</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg card-hover overflow-hidden">
+          <Card className="border border-gray-200 shadow-sm card-hover overflow-hidden">
             <CardContent className="p-5">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-gray-400 flex items-center justify-center">
                   <DollarSign className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">総売上（税込）</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-700">
                     ¥{stats.totalSales.toLocaleString()}
                   </p>
                 </div>
@@ -166,15 +166,15 @@ export default function OrdersPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg card-hover overflow-hidden">
+          <Card className="border border-gray-200 shadow-sm card-hover overflow-hidden">
             <CardContent className="p-5">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-gray-400 flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">平均注文額</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-700">
                     ¥{stats.avgOrderValue.toLocaleString()}
                   </p>
                 </div>
@@ -185,29 +185,29 @@ export default function OrdersPage() {
 
         {/* Quick Action */}
         <Link href="/orders/new">
-          <Card className="border-0 shadow-lg card-hover bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 transition-all cursor-pointer">
+          <Card className="border border-gray-200 shadow-sm card-hover bg-white hover:bg-gray-50 transition-all cursor-pointer">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-2xl bg-gray-400 flex items-center justify-center">
                     <Plus className="w-7 h-7 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-lg">新規注文を作成</h3>
+                    <h3 className="font-semibold text-gray-700 text-lg">新規注文を作成</h3>
                     <p className="text-gray-500">バーコードスキャンで商品を追加して注文を作成</p>
                   </div>
                 </div>
-                <ArrowUpRight className="w-6 h-6 text-gray-600" />
+                <ArrowUpRight className="w-6 h-6 text-gray-500" />
               </div>
             </CardContent>
           </Card>
         </Link>
 
         {/* 注文一覧 */}
-        <Card className="border-0 shadow-lg overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b">
+        <Card className="border border-gray-200 shadow-sm overflow-hidden">
+          <CardHeader className="bg-gray-50 border-b border-gray-200">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Package className="w-5 h-5 text-primary" />
+              <Package className="w-5 h-5 text-gray-600" />
               注文一覧
             </CardTitle>
           </CardHeader>

@@ -229,17 +229,17 @@ export default function NewOrderPage() {
           <div className="lg:col-span-2 space-y-6">
             {viewMode === "scan" ? (
               /* スキャンモード */
-              <Card className="border-0 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b">
+              <Card className="border border-gray-200 shadow-sm">
+                <CardHeader className="bg-gray-50 border-b border-gray-200">
                   <CardTitle className="flex items-center gap-2">
-                    <ScanLine className="w-5 h-5 text-primary" />
+                    <ScanLine className="w-5 h-5 text-gray-700" />
                     バーコードスキャン
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-8">
                   <div className="text-center">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mx-auto mb-6">
-                      <Camera className="w-10 h-10 text-blue-600" />
+                    <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-gray-300 flex items-center justify-center mx-auto mb-6">
+                      <Camera className="w-10 h-10 text-gray-700" />
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
                       バーコードをスキャン
@@ -248,7 +248,7 @@ export default function NewOrderPage() {
                       商品のバーコードを読み取って追加
                     </p>
                     <Button
-                      className="w-full max-w-sm"
+                      className="w-full max-w-sm bg-gray-700 hover:bg-gray-800 text-white font-bold shadow-md"
                       size="lg"
                       onClick={() => setShowScanner(true)}
                     >
@@ -262,13 +262,13 @@ export default function NewOrderPage() {
               /* 一覧モード */
               <>
                 {/* 検索バー */}
-                <Card className="border-0 shadow-lg">
+                <Card className="border border-gray-200 shadow-sm">
                   <CardContent className="p-4">
                     <div className="relative">
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
                         placeholder="商品名、商品コード、JANコードで検索..."
-                        className="pl-12 h-12 text-base bg-gray-50 border-0 rounded-xl"
+                        className="pl-12 h-12 text-base bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                       />
@@ -277,10 +277,10 @@ export default function NewOrderPage() {
                 </Card>
 
                 {/* 商品一覧 */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b">
+                <Card className="border border-gray-200 shadow-sm">
+                  <CardHeader className="bg-gray-50 border-b border-gray-200">
                     <CardTitle className="flex items-center gap-2">
-                      <Package className="w-5 h-5 text-primary" />
+                      <Package className="w-5 h-5 text-gray-700" />
                       商品一覧
                       {products.length > 0 && (
                         <span className="text-sm font-normal text-gray-500">
@@ -377,18 +377,18 @@ export default function NewOrderPage() {
                                             removeFromCart(variant.商品ID);
                                           }
                                         }}
-                                        className="w-9 h-9 p-0 rounded-lg border-2 border-red-400 bg-white hover:bg-red-500 hover:text-white text-red-600 font-bold transition-colors"
+                                        className="w-9 h-9 p-0 rounded-lg border-2 border-gray-300 bg-white hover:bg-gray-500 hover:text-white text-gray-600 font-bold transition-colors"
                                       >
                                         <span className="text-xl">−</span>
                                       </Button>
-                                      <span className="w-10 text-center font-bold text-gray-900 text-lg bg-white rounded-md py-1 border border-gray-300">
+                                      <span className="w-10 text-center font-bold text-gray-700 text-lg bg-white rounded-md py-1 border border-gray-300">
                                         {inCart.quantity}
                                       </span>
                                       <Button
                                         size="sm"
                                         onClick={() => updateQuantity(variant.商品ID, inCart.quantity + 1)}
                                         disabled={inCart.quantity >= stockQuantity}
-                                        className="w-9 h-9 p-0 rounded-lg border-2 border-blue-400 bg-white hover:bg-blue-500 hover:text-white text-blue-600 font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                        className="w-9 h-9 p-0 rounded-lg border-2 border-gray-300 bg-white hover:bg-gray-500 hover:text-white text-gray-600 font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                                       >
                                         <span className="text-xl">+</span>
                                       </Button>
@@ -398,7 +398,7 @@ export default function NewOrderPage() {
                                       size="sm"
                                       onClick={() => handleAddProduct(variant)}
                                       disabled={isOutOfStock}
-                                      className="rounded-xl flex-shrink-0 gap-1 h-10 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold border-2 border-blue-700 shadow-md"
+                                      className="rounded-xl flex-shrink-0 gap-1 h-10 px-4 bg-gray-500 hover:bg-gray-600 text-white font-semibold border border-gray-500"
                                     >
                                       <Plus className="w-4 h-4" />
                                       追加
@@ -417,10 +417,10 @@ export default function NewOrderPage() {
             )}
 
             {/* カート内商品 */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b">
+            <Card className="border border-gray-200 shadow-sm">
+              <CardHeader className="bg-gray-50 border-b border-gray-200">
                 <CardTitle className="flex items-center gap-2">
-                  <ShoppingCart className="w-5 h-5 text-primary" />
+                  <ShoppingCart className="w-5 h-5 text-gray-700" />
                   注文商品
                   {cart.length > 0 && (
                     <span className="text-sm font-normal text-gray-500">
@@ -453,37 +453,37 @@ export default function NewOrderPage() {
 
           {/* 注文サマリー */}
           <div>
-            <Card className="sticky top-6 border-2 border-gray-200 shadow-2xl">
-              <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-                <CardTitle className="text-white font-bold text-xl">注文サマリー</CardTitle>
+            <Card className="sticky top-6 border-2 border-gray-300 shadow-lg">
+              <CardHeader className="bg-gray-200">
+                <CardTitle className="text-gray-800 font-bold text-xl">注文サマリー</CardTitle>
               </CardHeader>
               <CardContent className="p-6 bg-white">
                 <div className="space-y-4">
-                  <div className="flex justify-between text-gray-700 py-2">
+                  <div className="flex justify-between text-gray-600 py-2">
                     <span className="font-medium">商品点数</span>
-                    <span className="font-bold text-gray-900 text-lg">{totalQuantity}点</span>
+                    <span className="font-bold text-gray-700 text-lg">{totalQuantity}点</span>
                   </div>
-                  <div className="flex justify-between text-gray-700 py-2">
+                  <div className="flex justify-between text-gray-600 py-2">
                     <span className="font-medium">小計（税抜）</span>
-                    <span className="font-bold text-gray-900 text-lg">
+                    <span className="font-bold text-gray-700 text-lg">
                       ¥{totalExclTax.toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex justify-between text-gray-700 py-2">
+                  <div className="flex justify-between text-gray-600 py-2">
                     <span className="font-medium">消費税</span>
-                    <span className="font-bold text-gray-900 text-lg">
+                    <span className="font-bold text-gray-700 text-lg">
                       ¥{tax.toLocaleString()}
                     </span>
                   </div>
-                  <div className="h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent my-4" />
-                  <div className="flex justify-between bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border-2 border-blue-200">
-                    <span className="text-xl font-bold text-gray-900">合計（税込）</span>
-                    <span className="text-2xl font-bold text-blue-700">¥{totalInclTax.toLocaleString()}</span>
+                  <div className="h-0.5 bg-gray-300 my-4" />
+                  <div className="flex justify-between bg-gray-100 p-4 rounded-xl border-2 border-gray-300">
+                    <span className="text-xl font-bold text-gray-700">合計（税込）</span>
+                    <span className="text-2xl font-bold text-gray-700">¥{totalInclTax.toLocaleString()}</span>
                   </div>
                 </div>
 
                 <Button
-                  className="w-full mt-6 h-14 text-lg font-bold bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-emerald-700"
+                  className="w-full mt-6 h-14 text-lg font-bold bg-gray-500 hover:bg-gray-600 text-white transition-all duration-200"
                   size="lg"
                   disabled={cart.length === 0 || isSubmitting}
                   onClick={handleSubmitOrder}
@@ -504,7 +504,7 @@ export default function NewOrderPage() {
                 {cart.length > 0 && (
                   <Button
                     variant="outline"
-                    className="w-full mt-3 h-12 text-base font-semibold text-red-600 hover:text-white border-2 border-red-500 hover:bg-red-500 hover:border-red-600 transition-all duration-200"
+                    className="w-full mt-3 h-12 text-base font-semibold text-gray-600 hover:text-gray-700 border-2 border-gray-300 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200"
                     onClick={clearCart}
                   >
                     <span className="flex items-center gap-2">

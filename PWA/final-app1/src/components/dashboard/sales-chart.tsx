@@ -63,11 +63,11 @@ export function SalesChart({ data }: SalesChartProps) {
   };
 
   return (
-    <Card className="border-0 shadow-lg overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b pb-4">
+    <Card className="border border-gray-200 shadow-sm overflow-hidden">
+      <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gray-400 flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -127,19 +127,19 @@ export function SalesChart({ data }: SalesChartProps) {
       <CardContent className="p-6">
         {/* サマリー */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl">
+          <div className="text-center p-4 bg-gray-100 rounded-2xl border border-gray-200">
             <div className="text-sm text-gray-500 mb-1">期間売上（税込）</div>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-gray-700">
               ¥{totalSales.toLocaleString()}
             </div>
           </div>
-          <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl">
+          <div className="text-center p-4 bg-gray-100 rounded-2xl border border-gray-200">
             <div className="text-sm text-gray-500 mb-1">期間注文数</div>
-            <div className="text-2xl font-bold text-gray-900">{totalOrders}件</div>
+            <div className="text-2xl font-bold text-gray-700">{totalOrders}件</div>
           </div>
-          <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl">
+          <div className="text-center p-4 bg-gray-100 rounded-2xl border border-gray-200">
             <div className="text-sm text-gray-500 mb-1">平均注文額</div>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-gray-700">
               ¥{avgSales.toLocaleString()}
             </div>
           </div>
@@ -152,20 +152,20 @@ export function SalesChart({ data }: SalesChartProps) {
               <AreaChart data={formattedData}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                 <XAxis
                   dataKey="displayDate"
-                  tick={{ fontSize: 12, fill: "#9ca3af" }}
+                  tick={{ fontSize: 12, fill: "#6b7280" }}
                   tickMargin={12}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 12, fill: "#9ca3af" }}
+                  tick={{ fontSize: 12, fill: "#6b7280" }}
                   tickFormatter={(value) =>
                     value >= 1000 ? `${(value / 1000).toFixed(0)}k` : String(value)
                   }
@@ -177,31 +177,31 @@ export function SalesChart({ data }: SalesChartProps) {
                 <Area
                   type="monotone"
                   dataKey="totalSalesInclTax"
-                  stroke="#3b82f6"
+                  stroke="#0ea5e9"
                   strokeWidth={3}
                   fill="url(#colorSales)"
                   dot={false}
-                  activeDot={{ r: 6, fill: "#3b82f6", stroke: "#fff", strokeWidth: 2 }}
+                  activeDot={{ r: 6, fill: "#0ea5e9", stroke: "#fff", strokeWidth: 2 }}
                 />
               </AreaChart>
             ) : (
               <BarChart data={formattedData}>
                 <defs>
                   <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#6366f1" />
+                    <stop offset="0%" stopColor="#0ea5e9" />
+                    <stop offset="100%" stopColor="#0284c7" />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                 <XAxis
                   dataKey="displayDate"
-                  tick={{ fontSize: 12, fill: "#9ca3af" }}
+                  tick={{ fontSize: 12, fill: "#6b7280" }}
                   tickMargin={12}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 12, fill: "#9ca3af" }}
+                  tick={{ fontSize: 12, fill: "#6b7280" }}
                   tickFormatter={(value) =>
                     value >= 1000 ? `${(value / 1000).toFixed(0)}k` : String(value)
                   }
