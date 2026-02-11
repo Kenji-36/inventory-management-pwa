@@ -103,8 +103,8 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          // PKCEフロー: コールバックURLでコード交換を行う
-          redirectTo: `${window.location.origin}/api/auth/callback`,
+          // implicitフロー: ルートに直接リダイレクト
+          redirectTo: `${window.location.origin}/`,
         },
       });
 

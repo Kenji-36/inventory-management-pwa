@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+/**
+ * ミドルウェア
+ * - APIルートの認証保護（401を返す）
+ * - ページレベルのリダイレクトはAuthProvider（クライアント側）が担当
+ * - セッションCookieのリフレッシュ
+ */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -18,15 +24,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 認証関連パスは常に許可（OAuthコールバック含む）
+  // 認証関連パスは常に許可
   if (pathname.startsWith("/api/auth")) {
     return NextResponse.next();
   }
 
-  // ログインページは常に許可（認証チェック不要）
+  // ログインページは常に許可
   if (pathname === "/login") {
     return NextResponse.next();
   }
+
+  // ページリクエスト（非API）はそのまま通す
+  // ページレベルの認証チェックはAuthProvider（クライアント側）が担当
+  if (!pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
+  // === ここ以降はAPIルートのみ ===
 
   // レスポンスを作成
   let response = NextResponse.next({
@@ -52,38 +66,23 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // getUser()でJWTを検証（getSession()より安全）
-  const { data: { user }, error } = await supabase.auth.getUser();
+  // APIルート: 認証チェック
+  const { data: { user } } = await supabase.auth.getUser();
 
-  // APIルートの場合は401を返す（リダイレクトではなく）
-  if (pathname.startsWith("/api/")) {
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: "認証が必要です" },
-        { status: 401 }
-      );
-    }
-    return response;
-  }
-
-  // 未ログインで保護されたページにアクセス → ログインへリダイレクト
   if (!user) {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.json(
+      { success: false, error: "認証が必要です" },
+      { status: 401 }
+    );
   }
 
   return response;
 }
 
-// 認証が必要なルートを指定
+// ルートマッチャー
 export const config = {
   matcher: [
-    /*
-     * 以下を除くすべてのルートにマッチ:
-     * - _next/static (静的ファイル)
-     * - _next/image (画像最適化)
-     * - favicon.ico (ファビコン)
-     */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    // APIルートのみマッチ（認証関連は除外）
+    "/api/((?!auth).*)",
   ],
 };
