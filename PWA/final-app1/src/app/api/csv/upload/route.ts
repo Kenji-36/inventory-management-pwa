@@ -190,7 +190,7 @@ export async function POST(request: Request) {
     // Supabaseで商品データをupsert（存在すれば更新、なければ挿入）
     let updatedCount = 0;
     let addedCount = 0;
-    const errors: string[] = [];
+    const processingErrors: string[] = [];
 
     console.log(`Processing ${products.length} products...`);
 
@@ -215,14 +215,14 @@ export async function POST(request: Request) {
         if (error) {
           const errorMsg = `商品ID ${product.商品ID} の更新に失敗: ${error.message}`;
           console.error(errorMsg, error);
-          errors.push(errorMsg);
+          processingErrors.push(errorMsg);
         } else if (data && data.length > 0) {
           console.log(`Successfully updated product ID ${product.商品ID}`);
           updatedCount++;
         } else {
           const warnMsg = `商品ID ${product.商品ID} が見つかりませんでした`;
           console.warn(warnMsg);
-          errors.push(warnMsg);
+          processingErrors.push(warnMsg);
         }
       } else {
         // 新規商品の追加
@@ -244,7 +244,7 @@ export async function POST(request: Request) {
         if (productError || !newProduct) {
           const errorMsg = `商品の追加に失敗: ${product.商品名} - ${productError?.message}`;
           console.error(errorMsg, productError);
-          errors.push(errorMsg);
+          processingErrors.push(errorMsg);
           continue;
         }
 
@@ -260,14 +260,14 @@ export async function POST(request: Request) {
       }
     }
 
-    console.log(`Processing complete: ${addedCount} added, ${updatedCount} updated, ${errors.length} errors`);
+    console.log(`Processing complete: ${addedCount} added, ${updatedCount} updated, ${processingErrors.length} errors`);
 
     return NextResponse.json({
       success: true,
-      message: `処理完了: ${addedCount}件追加、${updatedCount}件更新${errors.length > 0 ? `、${errors.length}件エラー` : ''}`,
+      message: `処理完了: ${addedCount}件追加、${updatedCount}件更新${processingErrors.length > 0 ? `、${processingErrors.length}件エラー` : ''}`,
       added: addedCount,
       updated: updatedCount,
-      errors: errors.length > 0 ? errors : undefined,
+      processingErrors: processingErrors.length > 0 ? processingErrors : undefined,
     });
   } catch (error) {
     const { errorResponse } = await import("@/lib/error-handler");
