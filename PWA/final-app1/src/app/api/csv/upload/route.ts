@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
-import { validateSession, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
+import { requireAuth, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
 import { validateProduct, validateFileSize, sanitizeString } from "@/lib/validation";
 
 interface CsvProduct {
@@ -28,13 +28,13 @@ interface ValidationError {
  */
 export async function POST(request: Request) {
   // セッション検証
-  const authResult = await validateSession();
-  if (!authResult.valid) {
-    return authResult.response;
+  const auth = await requireAuth();
+  if (!auth.authenticated) {
+    return auth.response;
   }
 
   // レート制限チェック（CSV アップロードは厳しく制限）
-  const rateLimit = await checkRateLimit(`csv-upload-${authResult.user.email}`, 5, 60000);
+  const rateLimit = await checkRateLimit(`csv-upload-${auth.user.email}`, 5, 60000);
   if (!rateLimit.allowed) {
     return rateLimitResponse(rateLimit.resetTime);
   }
