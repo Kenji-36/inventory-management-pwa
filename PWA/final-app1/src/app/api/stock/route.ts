@@ -127,7 +127,6 @@ export async function PUT(request: Request) {
         .single();
 
       if (insertError) {
-        console.error('在庫レコードの作成に失敗:', insertError);
         return NextResponse.json(
           { success: false, error: "在庫レコードの作成に失敗しました" },
           { status: 500 }
@@ -159,8 +158,6 @@ export async function PUT(request: Request) {
       );
     }
 
-    console.log(`📦 在庫更新: 商品ID=${productId}, ${currentQuantity} → ${newQuantity} (mode=${mode})`);
-
     // Supabaseで在庫を更新
     const { data: updatedStock, error: updateError } = await supabaseServer
       .from('stock')
@@ -173,11 +170,8 @@ export async function PUT(request: Request) {
       .single();
 
     if (updateError) {
-      console.error('❌ 在庫更新失敗:', updateError);
       throw updateError;
     }
-
-    console.log(`✅ 在庫更新成功: 商品ID=${productId}, 新在庫数=${updatedStock.quantity}`);
 
     return NextResponse.json({
       success: true,
