@@ -190,10 +190,14 @@ export async function POST(request: Request) {
     // Supabaseで商品データをupsert（存在すれば更新、なければ挿入）
     let updatedCount = 0;
     let addedCount = 0;
+    const errors: string[] = [];
+
+    console.log(`Processing ${products.length} products...`);
 
     for (const product of products) {
       if (product.商品ID) {
         // 既存商品の更新
+        console.log(`Updating product ID ${product.商品ID}:`, product.商品名);
         const { data, error } = await supabaseServer
           .from('products')
           .update({
@@ -209,12 +213,20 @@ export async function POST(request: Request) {
           .select();
 
         if (error) {
-          console.warn(`商品ID ${product.商品ID} の更新に失敗:`, error);
+          const errorMsg = `商品ID ${product.商品ID} の更新に失敗: ${error.message}`;
+          console.error(errorMsg, error);
+          errors.push(errorMsg);
         } else if (data && data.length > 0) {
+          console.log(`Successfully updated product ID ${product.商品ID}`);
           updatedCount++;
+        } else {
+          const warnMsg = `商品ID ${product.商品ID} が見つかりませんでした`;
+          console.warn(warnMsg);
+          errors.push(warnMsg);
         }
       } else {
         // 新規商品の追加
+        console.log(`Adding new product:`, product.商品名);
         const { data: newProduct, error: productError } = await supabaseServer
           .from('products')
           .insert({
@@ -230,7 +242,9 @@ export async function POST(request: Request) {
           .single();
 
         if (productError || !newProduct) {
-          console.warn(`商品の追加に失敗:`, productError);
+          const errorMsg = `商品の追加に失敗: ${product.商品名} - ${productError?.message}`;
+          console.error(errorMsg, productError);
+          errors.push(errorMsg);
           continue;
         }
 
@@ -241,15 +255,19 @@ export async function POST(request: Request) {
           last_stocked_date: null,
         });
 
+        console.log(`Successfully added product:`, newProduct.name);
         addedCount++;
       }
     }
 
+    console.log(`Processing complete: ${addedCount} added, ${updatedCount} updated, ${errors.length} errors`);
+
     return NextResponse.json({
       success: true,
-      message: `処理完了: ${addedCount}件追加、${updatedCount}件更新`,
+      message: `処理完了: ${addedCount}件追加、${updatedCount}件更新${errors.length > 0 ? `、${errors.length}件エラー` : ''}`,
       added: addedCount,
       updated: updatedCount,
+      errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {
     const { errorResponse } = await import("@/lib/error-handler");
