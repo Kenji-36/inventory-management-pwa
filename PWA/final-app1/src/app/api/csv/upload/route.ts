@@ -220,13 +220,18 @@ export async function POST(request: Request) {
           
           // 在庫数量が指定されている場合は在庫も更新
           if (product.在庫数量 !== undefined) {
-            await supabaseServer
+            const { error: stockError } = await supabaseServer
               .from('stock')
               .update({
                 quantity: product.在庫数量,
                 last_stocked_date: new Date().toISOString(),
               })
               .eq('product_id', product.商品ID);
+            
+            if (stockError) {
+              const warnMsg = `商品ID ${product.商品ID} の在庫更新に失敗: ${stockError.message}`;
+              processingErrors.push(warnMsg);
+            }
           }
         } else {
           const warnMsg = `商品ID ${product.商品ID} が見つかりませんでした`;
