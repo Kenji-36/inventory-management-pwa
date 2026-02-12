@@ -35,28 +35,21 @@ export function CsvUploadModal({ onClose, onSuccess }: CsvUploadModalProps) {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) {
-      console.error("No file selected");
-      return;
-    }
+    if (!selectedFile) return;
 
-    console.log("Selected file:", selectedFile.name, selectedFile.size, selectedFile.type);
     setIsUploading(true);
     setResult(null);
 
     try {
       const formData = new FormData();
       formData.append("file", selectedFile);
-      console.log("FormData created, file appended:", formData.get("file"));
 
       const response = await fetch("/api/csv/upload", {
         method: "POST",
         body: formData,
       });
 
-      console.log("Response status:", response.status);
       const data = await response.json();
-      console.log("Response data:", data);
 
       if (data.success) {
         setResult({

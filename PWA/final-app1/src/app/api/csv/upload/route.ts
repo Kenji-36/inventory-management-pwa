@@ -192,12 +192,9 @@ export async function POST(request: Request) {
     let addedCount = 0;
     const processingErrors: string[] = [];
 
-    console.log(`Processing ${products.length} products...`);
-
     for (const product of products) {
       if (product.商品ID) {
         // 既存商品の更新
-        console.log(`Updating product ID ${product.商品ID}:`, product.商品名);
         const { data, error } = await supabaseServer
           .from('products')
           .update({
@@ -214,19 +211,15 @@ export async function POST(request: Request) {
 
         if (error) {
           const errorMsg = `商品ID ${product.商品ID} の更新に失敗: ${error.message}`;
-          console.error(errorMsg, error);
           processingErrors.push(errorMsg);
         } else if (data && data.length > 0) {
-          console.log(`Successfully updated product ID ${product.商品ID}`);
           updatedCount++;
         } else {
           const warnMsg = `商品ID ${product.商品ID} が見つかりませんでした`;
-          console.warn(warnMsg);
           processingErrors.push(warnMsg);
         }
       } else {
         // 新規商品の追加
-        console.log(`Adding new product:`, product.商品名);
         const { data: newProduct, error: productError } = await supabaseServer
           .from('products')
           .insert({
@@ -255,7 +248,6 @@ export async function POST(request: Request) {
           } else {
             errorMsg += ` - ${productError?.message}`;
           }
-          console.error(errorMsg, productError);
           processingErrors.push(errorMsg);
           continue;
         }
@@ -267,12 +259,9 @@ export async function POST(request: Request) {
           last_stocked_date: null,
         });
 
-        console.log(`Successfully added product:`, newProduct.name);
         addedCount++;
       }
     }
-
-    console.log(`Processing complete: ${addedCount} added, ${updatedCount} updated, ${processingErrors.length} errors`);
 
     return NextResponse.json({
       success: true,
