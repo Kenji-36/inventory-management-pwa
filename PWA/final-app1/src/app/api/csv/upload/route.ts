@@ -242,7 +242,19 @@ export async function POST(request: Request) {
           .single();
 
         if (productError || !newProduct) {
-          const errorMsg = `商品の追加に失敗: ${product.商品名} - ${productError?.message}`;
+          let errorMsg = `商品の追加に失敗: ${product.商品名}`;
+          if (productError?.code === '23505') {
+            // UNIQUE制約違反
+            if (productError.message.includes('jan_code')) {
+              errorMsg += ` - JANコード「${product.JANコード}」は既に登録されています`;
+            } else if (productError.message.includes('product_code')) {
+              errorMsg += ` - 商品コード「${product.商品コード}」は既に登録されています`;
+            } else {
+              errorMsg += ` - 重複エラー: ${productError.message}`;
+            }
+          } else {
+            errorMsg += ` - ${productError?.message}`;
+          }
           console.error(errorMsg, productError);
           processingErrors.push(errorMsg);
           continue;
