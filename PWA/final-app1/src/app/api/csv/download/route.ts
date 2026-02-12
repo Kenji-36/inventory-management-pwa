@@ -30,6 +30,7 @@ export async function GET(request: Request) {
       "JANコード",
       "税抜価格",
       "税込価格",
+      "在庫数量",
     ];
 
     let csvContent = "";
@@ -38,21 +39,26 @@ export async function GET(request: Request) {
       // 空のテンプレート（ヘッダーのみ + サンプル2行）
       csvContent = [
         headers.join(","),
-        ",サンプル商品,,S,SKU-001,4500000000001,1000,1100",
-        ",サンプル商品,,M,SKU-001,4500000000002,1000,1100",
+        ",サンプル商品,,S,SKU-001,4500000000001,1000,1100,10",
+        ",サンプル商品,,M,SKU-001,4500000000002,1000,1100,20",
       ].join("\n");
     } else {
-      // Supabaseから現在のデータをエクスポート
+      // Supabaseから現在のデータをエクスポート（在庫情報も含む）
       const { data: productsData, error: productsError } = await supabaseServer
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          stock (
+            quantity
+          )
+        `)
         .order('id', { ascending: true });
 
       if (productsError) {
         throw productsError;
       }
 
-      const products: Product[] = (productsData || []).map((p: any) => ({
+      const products: any[] = (productsData || []).map((p: any) => ({
         商品ID: p.id,
         商品名: p.name,
         画像URL: p.image_url || "",
@@ -61,6 +67,7 @@ export async function GET(request: Request) {
         JANコード: p.jan_code,
         税抜価格: p.price_excluding_tax,
         税込価格: p.price_including_tax,
+        在庫数量: p.stock?.[0]?.quantity || 0,
         作成日: p.created_at,
         更新日: p.updated_at,
       }));
@@ -75,6 +82,7 @@ export async function GET(request: Request) {
           p.JANコード,
           p.税抜価格,
           p.税込価格,
+          p.在庫数量,
         ].join(",")
       );
 

@@ -12,6 +12,7 @@ interface CsvProduct {
   JANコード: string;
   税抜価格: number;
   税込価格: number;
+  在庫数量?: number;
 }
 
 interface ValidationError {
@@ -85,7 +86,7 @@ export async function POST(request: Request) {
 
     // ヘッダー行を取得
     const headers = parseCSVLine(lines[0]);
-    const expectedHeaders = [
+    const requiredHeaders = [
       "商品ID",
       "商品名",
       "画像URL",
@@ -95,9 +96,10 @@ export async function POST(request: Request) {
       "税抜価格",
       "税込価格",
     ];
+    const optionalHeaders = ["在庫数量"];
 
-    // ヘッダー検証
-    const missingHeaders = expectedHeaders.filter(
+    // 必須ヘッダー検証
+    const missingHeaders = requiredHeaders.filter(
       (h: any) => !headers.includes(h)
     );
     if (missingHeaders.length > 0) {
@@ -162,6 +164,7 @@ export async function POST(request: Request) {
           JANコード: sanitizeString(row["JANコード"]),
           税抜価格: Number(row["税抜価格"]),
           税込価格: Number(row["税込価格"]),
+          在庫数量: row["在庫数量"] && !isNaN(Number(row["在庫数量"])) ? Number(row["在庫数量"]) : undefined,
         };
 
         // 商品データの詳細検証
@@ -214,6 +217,17 @@ export async function POST(request: Request) {
           processingErrors.push(errorMsg);
         } else if (data && data.length > 0) {
           updatedCount++;
+          
+          // 在庫数量が指定されている場合は在庫も更新
+          if (product.在庫数量 !== undefined) {
+            await supabaseServer
+              .from('stock')
+              .update({
+                quantity: product.在庫数量,
+                last_stocked_date: new Date().toISOString(),
+              })
+              .eq('product_id', product.商品ID);
+          }
         } else {
           const warnMsg = `商品ID ${product.商品ID} が見つかりませんでした`;
           processingErrors.push(warnMsg);
@@ -253,10 +267,11 @@ export async function POST(request: Request) {
         }
 
         // 在庫情報も初期化
+        const stockQuantity = product.在庫数量 !== undefined ? product.在庫数量 : 0;
         await supabaseServer.from('stock').insert({
           product_id: newProduct.id,
-          quantity: 0,
-          last_stocked_date: null,
+          quantity: stockQuantity,
+          last_stocked_date: stockQuantity > 0 ? new Date().toISOString() : null,
         });
 
         addedCount++;
