@@ -103,11 +103,46 @@ export async function PUT(request: Request) {
       .eq('product_id', productId)
       .single();
 
+    // 在庫レコードが存在しない場合は新規作成
     if (fetchError || !currentStock) {
-      return NextResponse.json(
-        { success: false, error: "在庫情報が見つかりません" },
-        { status: 404 }
-      );
+      const newQuantity = mode === "add" ? quantity : quantity;
+      
+      // 在庫数の検証
+      const validation = validateStockQuantity(newQuantity);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { success: false, error: validation.error },
+          { status: 400 }
+        );
+      }
+
+      const { data: newStock, error: insertError } = await supabaseServer
+        .from('stock')
+        .insert({
+          product_id: productId,
+          quantity: newQuantity,
+          last_stocked_date: newQuantity > 0 ? new Date().toISOString() : null,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('在庫レコードの作成に失敗:', insertError);
+        return NextResponse.json(
+          { success: false, error: "在庫レコードの作成に失敗しました" },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          productId,
+          previousQuantity: 0,
+          newQuantity,
+          updatedAt: newStock.updated_at || newStock.created_at,
+        },
+      });
     }
 
     // 新しい在庫数を計算
