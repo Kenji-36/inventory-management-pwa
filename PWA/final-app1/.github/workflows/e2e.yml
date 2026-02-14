@@ -1,0 +1,65 @@
+# E2Eテスト用ワークフロー
+name: E2E Tests
+
+# いつ実行するか
+on:
+  # プルリクエストが作成・更新されたとき
+  pull_request:
+    branches: [main]
+  # mainブランチにpushされたとき
+  push:
+    branches: [main]
+
+# 実行するジョブ
+jobs:
+  e2e:
+    # タイムアウト設定（10分）
+    timeout-minutes: 10
+    # Ubuntu環境で実行
+    runs-on: ubuntu-latest
+    
+    steps:
+      # ステップ1: コードをチェックアウト
+      - name: コードをチェックアウト
+        uses: actions/checkout@v4
+      
+      # ステップ2: Node.jsをセットアップ
+      - name: Node.jsをセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      # ステップ3: 依存パッケージをインストール
+      - name: 依存パッケージをインストール
+        run: npm ci
+      
+      # ステップ4: Playwrightブラウザをインストール
+      - name: Playwrightブラウザをインストール
+        run: npx playwright install --with-deps chromium
+      
+      # ステップ5: E2Eテストを実行
+      - name: E2Eテストを実行
+        run: npm run test:e2e
+        env:
+          # 環境変数をGitHub Secretsから取得
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      
+      # ステップ6: テスト失敗時のスクリーンショットをアップロード
+      - name: テスト失敗時のスクリーンショットをアップロード
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-screenshots
+          path: test-results/
+          retention-days: 7
+      
+      # ステップ7: Playwrightレポートをアップロード
+      - name: Playwrightレポートをアップロード
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

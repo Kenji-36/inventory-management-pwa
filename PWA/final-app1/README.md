@@ -6,6 +6,8 @@
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green.svg)
+![Test](https://github.com/Kenji-36/inventory-management-pwa/workflows/Test/badge.svg)
+![E2E Tests](https://github.com/Kenji-36/inventory-management-pwa/workflows/E2E%20Tests/badge.svg)
 
 ## ✨ 主な機能
 

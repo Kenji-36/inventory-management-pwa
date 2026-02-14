@@ -1,0 +1,51 @@
+# ワークフローの名前（GitHub上で表示される）
+name: Test
+
+# いつ実行するか
+on:
+  # プルリクエストが作成・更新されたとき
+  pull_request:
+    branches: [main]
+  # mainブランチにpushされたとき
+  push:
+    branches: [main]
+
+# 実行するジョブ
+jobs:
+  # ジョブ名: test
+  test:
+    # Ubuntu環境で実行
+    runs-on: ubuntu-latest
+    
+    # 実行する手順
+    steps:
+      # ステップ1: コードをチェックアウト（取得）
+      - name: コードをチェックアウト
+        uses: actions/checkout@v4
+      
+      # ステップ2: Node.jsをセットアップ
+      - name: Node.jsをセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      # ステップ3: 依存パッケージをインストール
+      - name: 依存パッケージをインストール
+        run: npm ci
+      
+      # ステップ4: Lintチェック
+      - name: Lintチェックを実行
+        run: npm run lint
+      
+      # ステップ5: テストを実行
+      - name: テストを実行
+        run: npm test
+      
+      # ステップ6: ビルドを実行
+      - name: ビルドを実行
+        run: npm run build
+        env:
+          # 環境変数をGitHub Secretsから取得
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
