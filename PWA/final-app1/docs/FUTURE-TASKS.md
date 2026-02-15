@@ -100,31 +100,29 @@ jobs:
 
 ### 🟡 優先度：中（近い将来に対応）
 
-#### 4. ユーザー権限管理の強化
+#### 4. ユーザー権限管理の強化 ✅ 完了
 **目的**: 管理者と一般ユーザーの権限分離
 
 **タスク**:
-- [ ] ユーザーロール管理画面の実装
-  - [ ] 管理者専用ダッシュボード
-  - [ ] ユーザー一覧・編集機能
-  - [ ] 権限設定UI
-- [ ] RLSポリシーの細分化
-- [ ] 操作ログの記録（監査ログ）
+- [x] ユーザーロール管理画面の実装
+  - [x] 管理者専用ダッシュボード（/admin）
+  - [x] ユーザー一覧・編集機能
+  - [x] 権限設定UI（ロール変更ドロップダウン）
+- [x] RLSポリシーの細分化
+- [x] 操作ログの記録（監査ログ）
 
-**推定工数**: 3-4日
+**実施内容**:
+- ✅ 管理者専用ダッシュボード `/admin` 作成（ユーザー管理 + 監査ログ閲覧）
+- ✅ 管理者用API作成（`/api/admin/users`、`/api/admin/audit-logs`）
+- ✅ 監査ログテーブル `audit_logs` 用SQLスクリプト作成
+- ✅ 監査ログ記録ヘルパー関数作成（`src/lib/audit-log.ts`）
+- ✅ 主要API（注文作成・在庫更新・CSVインポート・ロール変更）に監査ログ追加
+- ✅ ヘッダーナビゲーションに管理者メニュー追加（管理者のみ表示）
+- ✅ RLSポリシー設定（管理者は全ユーザー閲覧/更新可能、監査ログは管理者のみ閲覧）
+- ✅ TypeScript型定義更新（audit_logsテーブル追加）
 
-**データベース拡張**:
-```sql
--- ロールテーブルの追加
-CREATE TABLE roles (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(50) NOT NULL UNIQUE,
-  permissions JSONB NOT NULL
-);
-
--- ユーザーロール関連テーブル
-ALTER TABLE users ADD COLUMN role_id INTEGER REFERENCES roles(id);
-```
+**完了日**: 2026年2月15日
+**推定工数**: 3-4日 → **実績**: 0.5日
 
 ---
 
@@ -442,6 +440,14 @@ ALTER TABLE users ADD COLUMN role_id INTEGER REFERENCES roles(id);
   - 初学者向けガイド作成（ERROR-MONITORING-GUIDE.md、SENTRY-AUTH-TOKEN-GUIDE.md）
   - Sentryダッシュボードで5種類のエラー送信を動作確認済み
 
+- [x] **4. ユーザー権限管理の強化**
+  - 管理者専用ダッシュボード作成（/admin）
+  - ユーザー一覧・ロール変更UI
+  - 管理者用API（/api/admin/users、/api/admin/audit-logs）
+  - 監査ログテーブル・記録機能実装
+  - RLSポリシーの細分化（SQLスクリプト）
+  - ヘッダーに管理者メニュー追加（管理者のみ表示）
+
 ---
 
 ## 📋 進捗サマリー
@@ -451,7 +457,7 @@ ALTER TABLE users ADD COLUMN role_id INTEGER REFERENCES roles(id);
 | 1 | CI/CDパイプラインの構築 | 🔴 高 | [x] 完了 |
 | 2 | エラー監視・ログ管理 | 🔴 高 | [x] 完了 |
 | 3 | データベースバックアップ戦略 | 🔴 高 | [ ] 未着手 |
-| 4 | ユーザー権限管理の強化 | 🟡 中 | [ ] 未着手 |
+| 4 | ユーザー権限管理の強化 | 🟡 中 | [x] 完了 |
 | 5 | 高度な在庫管理機能 | 🟡 中 | [ ] 未着手 |
 | 6 | レポート・分析機能の拡張 | 🟡 中 | [ ] 未着手 |
 | 7 | モバイルアプリ対応の強化 | 🟡 中 | [ ] 未着手 |
@@ -461,7 +467,7 @@ ALTER TABLE users ADD COLUMN role_id INTEGER REFERENCES roles(id);
 | 11 | パフォーマンス最適化 | 🟢 低 | [ ] 未着手 |
 | 12 | アクセシビリティ対応 | 🟢 低 | [ ] 未着手 |
 
-**完了率**: 2 / 12 タスク (17%)
+**完了率**: 3 / 12 タスク (25%)
 
 ---
 
