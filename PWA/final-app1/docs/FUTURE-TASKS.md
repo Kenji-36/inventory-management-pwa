@@ -57,21 +57,25 @@ jobs:
 
 ---
 
-#### 2. エラー監視・ログ管理
+#### 2. エラー監視・ログ管理 ✅ 完了
 **目的**: 本番環境のエラーを早期発見・対応
 
 **タスク**:
-- [ ] Sentryの導入（エラートラッキング）
-- [ ] Vercel Analyticsの有効化
-- [ ] エラーログの集約と通知設定
-- [ ] パフォーマンスモニタリング
+- [x] Sentryの導入（エラートラッキング）
+- [x] Vercel Analyticsの有効化
+- [x] エラーログの集約と通知設定
+- [x] パフォーマンスモニタリング
 
-**推定工数**: 1日
+**実施内容**:
+- ✅ @sentry/nextjs パッケージインストール
+- ✅ Sentry設定ファイル作成（client/server/edge）
+- ✅ グローバルエラーページ作成（error.tsx）
+- ✅ Vercel Analytics統合
+- ✅ テストページ作成（/test-error）
+- ✅ ERROR-MONITORING-GUIDE.md 作成（初学者向けガイド）
 
-**推奨ツール**:
-- Sentry（エラートラッキング）
-- Vercel Analytics（アクセス解析）
-- LogRocket（セッションリプレイ）
+**完了日**: 2026年2月13日  
+**推定工数**: 1日 → **実績**: 1日
 
 ---
 
@@ -420,6 +424,13 @@ ALTER TABLE users ADD COLUMN role_id INTEGER REFERENCES roles(id);
   - GitHub Secrets設定手順書作成
   - ステータスバッジ追加
   - 全46テスト成功確認
+
+- ✅ **エラー監視・ログ管理**
+  - Sentryエラートラッキング導入
+  - Vercel Analytics統合
+  - グローバルエラーハンドリング実装
+  - テストページ作成
+  - 初学者向けガイド作成
 
 ---
 

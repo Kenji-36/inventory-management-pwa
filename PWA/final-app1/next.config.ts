@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const withPWA = withPWAInit({
   dest: "public",
@@ -18,6 +19,11 @@ const withPWA = withPWAInit({
 const nextConfig: NextConfig = {
   // Turbopack設定（Next.js 16対応）
   turbopack: {},
+
+  // Sentry用のinstrumentationを有効化
+  experimental: {
+    instrumentationHook: true,
+  },
 
   // 外部画像の許可（Supabase Storage）- 環境変数から動的に取得
   images: {
@@ -113,4 +119,21 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA(nextConfig);
+// Sentry設定でラップ
+export default withSentryConfig(
+  withPWA(nextConfig),
+  {
+    // Sentryの追加設定
+    silent: true, // ビルド時のログを抑制
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+  },
+  {
+    // ソースマップのアップロード設定
+    widenClientFileUpload: true,
+    transpileClientSDK: true,
+    tunnelRoute: "/monitoring",
+    hideSourceMaps: true,
+    disableLogger: true,
+  }
+);

@@ -65,6 +65,10 @@
 - **Vercel** (ホスティング)
 - **Supabase** (BaaS)
 
+### 監視・分析
+- **Sentry** (エラートラッキング)
+- **Vercel Analytics** (アクセス解析)
+
 ## 📋 システム要件
 
 - Node.js 18以上
