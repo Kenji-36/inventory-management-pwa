@@ -376,54 +376,91 @@ function ComparisonChart({
 // エクスポート関数
 // ============================================================
 
+// フォントキャッシュ（一度読み込んだら再利用）
+let fontCache: string | null = null;
+
+async function loadJapaneseFont(): Promise<string> {
+  if (fontCache) return fontCache;
+
+  const response = await fetch('/fonts/NotoSansJP-Regular.ttf');
+  const arrayBuffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+
+  // ArrayBuffer を Base64 に変換
+  let binary = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  fontCache = btoa(binary);
+  return fontCache;
+}
+
 async function exportPdf(data: ReportData) {
   const { default: jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
 
   const doc = new jsPDF();
 
+  // 日本語フォントを登録
+  try {
+    const fontBase64 = await loadJapaneseFont();
+    doc.addFileToVFS('NotoSansJP-Regular.ttf', fontBase64);
+    doc.addFont('NotoSansJP-Regular.ttf', 'NotoSansJP', 'normal');
+    doc.setFont('NotoSansJP');
+  } catch (e) {
+    console.warn('日本語フォント読み込み失敗、デフォルトフォントで出力:', e);
+  }
+
   // タイトル
   doc.setFontSize(16);
-  doc.text('Sales Report', 14, 20);
+  doc.text('売上レポート', 14, 20);
   doc.setFontSize(10);
-  doc.text(`Period: ${data.period.start} ~ ${data.period.end}`, 14, 28);
-  doc.text(`Generated: ${new Date().toLocaleString('ja-JP')}`, 14, 34);
+  doc.text(`期間: ${data.period.start} 〜 ${data.period.end}`, 14, 28);
+  doc.text(`出力日時: ${new Date().toLocaleString('ja-JP')}`, 14, 34);
+
+  // フォント設定（autoTable用）
+  const tableFont = 'NotoSansJP';
+  const tableStyles = { font: tableFont, fontSize: 9 };
 
   // サマリー
   doc.setFontSize(12);
-  doc.text('Summary', 14, 46);
+  doc.text('概要', 14, 46);
   autoTable(doc, {
     startY: 50,
-    head: [['Metric', 'Value']],
+    head: [['指標', '値']],
     body: [
-      ['Total Orders', `${data.current.totalOrders}`],
-      ['Sales (incl. tax)', `${data.current.totalSalesInclTax.toLocaleString()} JPY`],
-      ['Sales (excl. tax)', `${data.current.totalSalesExclTax.toLocaleString()} JPY`],
-      ['Total Items Sold', `${data.current.totalItems}`],
-      ['Avg. Order Value', `${data.current.averageOrderValue.toLocaleString()} JPY`],
+      ['総注文数', `${data.current.totalOrders} 件`],
+      ['売上（税込）', `¥${data.current.totalSalesInclTax.toLocaleString()}`],
+      ['売上（税抜）', `¥${data.current.totalSalesExclTax.toLocaleString()}`],
+      ['販売商品数', `${data.current.totalItems} 個`],
+      ['平均注文額', `¥${data.current.averageOrderValue.toLocaleString()}`],
     ],
     theme: 'grid',
-    headStyles: { fillColor: [79, 70, 229] },
+    headStyles: { fillColor: [79, 70, 229], font: tableFont },
+    styles: tableStyles,
   });
 
   // 商品別売上
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finalY = ((doc as any).lastAutoTable?.finalY as number) || 120;
   doc.setFontSize(12);
-  doc.text('Product Sales', 14, finalY + 10);
+  doc.text('商品別売上ランキング', 14, finalY + 10);
   autoTable(doc, {
     startY: finalY + 14,
-    head: [['#', 'Product', 'Qty', 'Sales (incl.)', 'Sales (excl.)', 'Orders']],
+    head: [['#', '商品名', '数量', '売上（税込）', '売上（税抜）', '注文数']],
     body: data.current.productSales.slice(0, 20).map((p, i) => [
       `${i + 1}`,
-      p.productName.length > 25 ? p.productName.slice(0, 25) + '...' : p.productName,
+      p.productName.length > 20 ? p.productName.slice(0, 20) + '…' : p.productName,
       `${p.totalQuantity}`,
-      `${p.totalInclTax.toLocaleString()}`,
-      `${p.totalExclTax.toLocaleString()}`,
+      `¥${p.totalInclTax.toLocaleString()}`,
+      `¥${p.totalExclTax.toLocaleString()}`,
       `${p.orderCount}`,
     ]),
     theme: 'grid',
-    headStyles: { fillColor: [79, 70, 229] },
+    headStyles: { fillColor: [79, 70, 229], font: tableFont },
+    styles: tableStyles,
     columnStyles: {
       0: { cellWidth: 10 },
       2: { halign: 'right' },
