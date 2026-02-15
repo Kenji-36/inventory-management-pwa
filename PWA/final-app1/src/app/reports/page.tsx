@@ -535,9 +535,42 @@ async function exportExcel(data: ReportData) {
   const ws2 = XLSX.utils.aoa_to_sheet(productData);
   const ws3 = XLSX.utils.aoa_to_sheet(dailyData);
 
+  // 数値フォーマット（カンマ区切り）: #,##0
+  const numFmt = '#,##0';
+
+  // サマリーシート: B列（値）の数値セルにカンマ区切りを適用（B5~B9 = 行インデックス4~8）
+  for (let r = 4; r <= 8; r++) {
+    const cell = ws1[XLSX.utils.encode_cell({ r, c: 1 })];
+    if (cell && typeof cell.v === 'number') {
+      cell.z = numFmt;
+    }
+  }
+
+  // 商品別売上シート: D列(販売数), E列(売上税込), F列(売上税抜), G列(注文数) にカンマ区切り
+  const ws2Rows = data.current.productSales.length;
+  for (let r = 1; r <= ws2Rows; r++) {
+    for (const c of [3, 4, 5, 6]) { // D=3, E=4, F=5, G=6
+      const cell = ws2[XLSX.utils.encode_cell({ r, c })];
+      if (cell && typeof cell.v === 'number') {
+        cell.z = numFmt;
+      }
+    }
+  }
+
+  // 日別売上シート: B列(注文数), C列(売上税込), D列(売上税抜), E列(商品数) にカンマ区切り
+  const ws3Rows = data.current.dailySales.length;
+  for (let r = 1; r <= ws3Rows; r++) {
+    for (const c of [1, 2, 3, 4]) { // B=1, C=2, D=3, E=4
+      const cell = ws3[XLSX.utils.encode_cell({ r, c })];
+      if (cell && typeof cell.v === 'number') {
+        cell.z = numFmt;
+      }
+    }
+  }
+
   // 列幅設定
-  ws1['!cols'] = [{ wch: 15 }, { wch: 30 }];
-  ws2['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 10 }];
+  ws1['!cols'] = [{ wch: 15 }, { wch: 20 }];
+  ws2['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 10 }];
   ws3['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 10 }];
 
   XLSX.utils.book_append_sheet(wb, ws1, 'サマリー');
