@@ -3,6 +3,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 import { requireAuth, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
 import { validateOrderQuantity, validatePrice } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit-log";
+import { recordStockMovementBatch, type StockMovementEntry } from "@/lib/stock-movement";
 import type { Order } from "@/types";
 
 /**
@@ -206,6 +207,31 @@ export async function POST(request: Request) {
         console.warn(`在庫更新スキップ: 商品ID ${item.productId}`, e);
       }
     }
+
+    // 入出庫履歴に記録（注文による出庫）
+    const stockMovements: StockMovementEntry[] = [];
+    for (const item of items) {
+      // 現在の在庫を取得（出庫後の値を計算するため）
+      const { data: stockData } = await supabaseServer
+        .from('stock')
+        .select('quantity')
+        .eq('product_id', item.productId)
+        .single();
+
+      const currentQty = stockData?.quantity ?? 0;
+      stockMovements.push({
+        productId: item.productId,
+        userId: auth.user.id,
+        userEmail: auth.user.email,
+        movementType: 'order',
+        quantity: -item.quantity,
+        previousQuantity: currentQty + item.quantity, // 出庫前の在庫数
+        newQuantity: currentQty,
+        reason: `注文 #${newOrder.id}`,
+        orderId: newOrder.id,
+      });
+    }
+    await recordStockMovementBatch(stockMovements);
 
     // 監査ログに記録
     await recordAuditLog({

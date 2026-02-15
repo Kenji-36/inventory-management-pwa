@@ -90,6 +90,47 @@ export interface Database {
           updated_at?: string
         }
       }
+      stock_movements: {
+        Row: {
+          id: number
+          product_id: number
+          user_id: string | null
+          user_email: string | null
+          movement_type: string
+          quantity: number
+          previous_quantity: number
+          new_quantity: number
+          reason: string | null
+          order_id: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          product_id: number
+          user_id?: string | null
+          user_email?: string | null
+          movement_type: string
+          quantity: number
+          previous_quantity: number
+          new_quantity: number
+          reason?: string | null
+          order_id?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          product_id?: number
+          user_id?: string | null
+          user_email?: string | null
+          movement_type?: string
+          quantity?: number
+          previous_quantity?: number
+          new_quantity?: number
+          reason?: string | null
+          order_id?: number | null
+          created_at?: string
+        }
+      }
       stock: {
         Row: {
           id: number

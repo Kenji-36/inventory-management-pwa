@@ -3,6 +3,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 import { requireAuth, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
 import { validateStockQuantity } from "@/lib/validation";
 import { recordAuditLog } from "@/lib/audit-log";
+import { recordStockMovement } from "@/lib/stock-movement";
 
 /**
  * 在庫情報を取得
@@ -173,6 +174,18 @@ export async function PUT(request: Request) {
     if (updateError) {
       throw updateError;
     }
+
+    // 入出庫履歴に記録
+    await recordStockMovement({
+      productId,
+      userId: auth.user.id,
+      userEmail: auth.user.email,
+      movementType: newQuantity > currentQuantity ? 'in' : newQuantity < currentQuantity ? 'out' : 'adjust',
+      quantity: newQuantity - currentQuantity,
+      previousQuantity: currentQuantity,
+      newQuantity,
+      reason: '在庫画面から手動更新',
+    });
 
     // 監査ログに記録
     await recordAuditLog({

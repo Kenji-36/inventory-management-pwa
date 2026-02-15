@@ -31,40 +31,47 @@ export default function SettingsPage() {
   const checkDbConnection = async () => {
     setIsCheckingDb(true);
     try {
-      // Supabaseの接続状態を確認（countオプションを使用）
-      const { count: productsCount, error: productsError } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true });
+      // 各テーブルを個別にチェック（エラーがあっても他のテーブルは確認を続行）
+      const tableChecks = [
+        { name: "商品 (products)", table: "products" },
+        { name: "在庫 (stock)", table: "stock" },
+        { name: "注文 (orders)", table: "orders" },
+        { name: "入出庫履歴 (stock_movements)", table: "stock_movements" },
+      ];
 
-      const { count: stockCount, error: stockError } = await supabase
-        .from('stock')
-        .select('*', { count: 'exact', head: true });
+      const results: { name: string; count: number; ok: boolean }[] = [];
+      let connectedCount = 0;
 
-      const { count: ordersCount, error: ordersError } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true });
+      for (const check of tableChecks) {
+        const { count, error } = await supabase
+          .from(check.table)
+          .select('*', { count: 'exact', head: true });
 
-      const { count: usersCount, error: usersError } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true });
+        if (!error) {
+          results.push({ name: check.name, count: count || 0, ok: true });
+          connectedCount++;
+        } else {
+          results.push({ name: check.name, count: 0, ok: false });
+        }
+      }
 
-      if (!productsError && !stockError && !ordersError && !usersError) {
+      // 主要テーブル（products, stock）のどちらかに接続できれば「接続成功」とする
+      const coreConnected = results.slice(0, 2).some(r => r.ok);
+
+      if (coreConnected) {
         setDbStatus({
           connected: true,
           message: "接続成功",
           database: "Supabase PostgreSQL",
-          tables: [
-            { name: "商品 (products)", count: productsCount || 0 },
-            { name: "在庫 (stock)", count: stockCount || 0 },
-            { name: "注文 (orders)", count: ordersCount || 0 },
-            { name: "ユーザー (users)", count: usersCount || 0 },
-          ],
+          tables: results
+            .filter(r => r.ok)
+            .map(r => ({ name: r.name, count: r.count })),
           version: "PostgreSQL 15",
         });
       } else {
         setDbStatus({
           connected: false,
-          message: "一部のテーブルへのアクセスに失敗しました",
+          message: "データベースに接続できません",
         });
       }
     } catch (error) {

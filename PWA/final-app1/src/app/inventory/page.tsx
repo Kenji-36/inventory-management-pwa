@@ -17,8 +17,10 @@ import {
   Boxes,
   ScanLine,
   FileSpreadsheet,
-  AlertCircle
+  AlertCircle,
+  ClipboardCheck
 } from "lucide-react";
+import Link from "next/link";
 import { ProductList } from "@/components/inventory/product-list";
 import { StockEditModal } from "@/components/inventory/stock-edit-modal";
 import { BarcodeScanner } from "@/components/inventory/barcode-scanner";
@@ -188,6 +190,16 @@ export default function InventoryPage() {
                     <span>リアルタイム</span>
                   </div>
                 )}
+                <Link href="/inventory/history">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 h-8"
+                  >
+                    <ClipboardCheck className="w-3 h-3 mr-1" />
+                    高度な管理
+                  </Button>
+                </Link>
                 <Button
                   variant="secondary"
                   size="sm"
