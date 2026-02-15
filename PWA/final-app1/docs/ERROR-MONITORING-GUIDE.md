@@ -79,6 +79,57 @@ SENTRY_DSN=https://xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@o1234567.ingest.sentry.io/12
 
 この値を**メモ帳にコピー**してください（後で使用します）
 
+### 1-4. Auth Token（認証トークン）を取得
+
+Auth Tokenは、ビルド時にソースマップをSentryにアップロードするために必要です。
+
+#### 手順1: Settings（設定）を開く
+
+1. Sentry Dashboardの左下にある **Settings**（歯車アイコン）をクリック
+2. 左メニューから **Auth Tokens** をクリック
+
+または、直接以下のURLにアクセス：
+```
+https://sentry.io/settings/account/api/auth-tokens/
+```
+
+#### 手順2: 新しいトークンを作成
+
+1. **Create New Token** ボタンをクリック
+2. トークン情報を入力:
+   - **Name**: `inventory-management-pwa` （わかりやすい名前）
+   - **Scopes**（権限）: 以下をチェック
+     - ✅ `project:read`
+     - ✅ `project:releases`
+     - ✅ `org:read`
+3. **Create Token** をクリック
+
+#### 手順3: トークンをコピー
+
+⚠️ **重要**: トークンは一度しか表示されません！
+
+```
+sntrys_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+この値を**すぐにメモ帳にコピー**してください。
+
+#### 📝 取得した情報をまとめる
+
+以下の情報をメモ帳に保存してください：
+
+```
+# Sentry情報
+NEXT_PUBLIC_SENTRY_DSN=https://xxxxxxxx@o1234567.ingest.sentry.io/1234567
+SENTRY_AUTH_TOKEN=sntrys_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+SENTRY_ORG=your-organization-slug
+SENTRY_PROJECT=inventory-management-pwa
+```
+
+**Organization Slug（組織名）の確認方法**:
+- Sentry DashboardのURLを確認: `https://sentry.io/organizations/your-org-slug/`
+- または、Settings → General → Organization Slug
+
 ---
 
 ## ステップ2: Sentryパッケージのインストール
