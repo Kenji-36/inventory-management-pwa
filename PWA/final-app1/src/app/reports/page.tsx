@@ -403,70 +403,85 @@ async function exportPdf(data: ReportData) {
 
   const doc = new jsPDF();
 
-  // 日本語フォントを登録
+  // 日本語フォントを登録（normal と bold の両方を同じフォントで登録）
+  const fontName = 'NotoSansJP';
   try {
     const fontBase64 = await loadJapaneseFont();
-    doc.addFileToVFS('NotoSansJP-Regular.ttf', fontBase64);
-    doc.addFont('NotoSansJP-Regular.ttf', 'NotoSansJP', 'normal');
-    doc.setFont('NotoSansJP');
+    doc.addFileToVFS('NotoSansJP.ttf', fontBase64);
+    doc.addFont('NotoSansJP.ttf', fontName, 'normal');
+    doc.addFont('NotoSansJP.ttf', fontName, 'bold');
+    doc.setFont(fontName, 'normal');
   } catch (e) {
-    console.warn('日本語フォント読み込み失敗、デフォルトフォントで出力:', e);
+    console.warn('日本語フォント読み込み失敗:', e);
   }
 
-  // タイトル
-  doc.setFontSize(16);
+  // タイトル（太字・黒）
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(18);
   doc.text('売上レポート', 14, 20);
   doc.setFontSize(10);
-  doc.text(`期間: ${data.period.start} 〜 ${data.period.end}`, 14, 28);
+  doc.text(`期間: ${data.period.start} ~ ${data.period.end}`, 14, 28);
   doc.text(`出力日時: ${new Date().toLocaleString('ja-JP')}`, 14, 34);
 
-  // フォント設定（autoTable用）
-  const tableFont = 'NotoSansJP';
-  const tableStyles = { font: tableFont, fontSize: 9 };
+  // 共通テーブルスタイル（全セルに適用）
+  const baseStyles = {
+    font: fontName,
+    fontSize: 9,
+    textColor: [0, 0, 0] as [number, number, number],
+  };
+
+  // ヘッダースタイル
+  const headStyle = {
+    font: fontName,
+    fontStyle: 'normal' as const,
+    fillColor: [79, 70, 229] as [number, number, number],
+    textColor: [255, 255, 255] as [number, number, number],
+    fontSize: 9,
+  };
 
   // サマリー
-  doc.setFontSize(12);
+  doc.setFontSize(13);
   doc.text('概要', 14, 46);
   autoTable(doc, {
     startY: 50,
     head: [['指標', '値']],
     body: [
       ['総注文数', `${data.current.totalOrders} 件`],
-      ['売上（税込）', `¥${data.current.totalSalesInclTax.toLocaleString()}`],
-      ['売上（税抜）', `¥${data.current.totalSalesExclTax.toLocaleString()}`],
+      ['売上(税込)', `¥${data.current.totalSalesInclTax.toLocaleString()}`],
+      ['売上(税抜)', `¥${data.current.totalSalesExclTax.toLocaleString()}`],
       ['販売商品数', `${data.current.totalItems} 個`],
       ['平均注文額', `¥${data.current.averageOrderValue.toLocaleString()}`],
     ],
     theme: 'grid',
-    headStyles: { fillColor: [79, 70, 229], font: tableFont },
-    styles: tableStyles,
+    styles: baseStyles,
+    headStyles: headStyle,
   });
 
   // 商品別売上
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finalY = ((doc as any).lastAutoTable?.finalY as number) || 120;
-  doc.setFontSize(12);
+  doc.setFontSize(13);
   doc.text('商品別売上ランキング', 14, finalY + 10);
   autoTable(doc, {
     startY: finalY + 14,
-    head: [['#', '商品名', '数量', '売上（税込）', '売上（税抜）', '注文数']],
+    head: [['#', '商品名', '数量', '売上(税込)', '売上(税抜)', '注文数']],
     body: data.current.productSales.slice(0, 20).map((p, i) => [
       `${i + 1}`,
-      p.productName.length > 20 ? p.productName.slice(0, 20) + '…' : p.productName,
+      p.productName.length > 20 ? p.productName.slice(0, 20) + '...' : p.productName,
       `${p.totalQuantity}`,
       `¥${p.totalInclTax.toLocaleString()}`,
       `¥${p.totalExclTax.toLocaleString()}`,
       `${p.orderCount}`,
     ]),
     theme: 'grid',
-    headStyles: { fillColor: [79, 70, 229], font: tableFont },
-    styles: tableStyles,
+    styles: baseStyles,
+    headStyles: headStyle,
     columnStyles: {
       0: { cellWidth: 10 },
-      2: { halign: 'right' },
-      3: { halign: 'right' },
-      4: { halign: 'right' },
-      5: { halign: 'right' },
+      2: { halign: 'right' as const },
+      3: { halign: 'right' as const },
+      4: { halign: 'right' as const },
+      5: { halign: 'right' as const },
     },
   });
 
