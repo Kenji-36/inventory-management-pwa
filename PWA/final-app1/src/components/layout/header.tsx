@@ -38,20 +38,28 @@ export function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // API経由でユーザーのロールを取得（RLS制限を回避）
+  const fetchUserRole = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setIsAdmin(data.user.isAdmin === true);
+        }
+      }
+    } catch {
+      // エラー時は管理者メニューを非表示
+      setIsAdmin(false);
+    }
+  };
+
   useEffect(() => {
     // 初期ユーザー取得
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       if (user) {
-        // ロールを確認
-        supabase
-          .from('users')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-          .then(({ data }: { data: { role: string } | null }) => {
-            setIsAdmin(data?.role === 'admin');
-          });
+        fetchUserRole();
       }
     });
 
@@ -59,14 +67,7 @@ export function Header() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        supabase
-          .from('users')
-          .select('role')
-          .eq('id', session.user.id)
-          .single()
-          .then(({ data }: { data: { role: string } | null }) => {
-            setIsAdmin(data?.role === 'admin');
-          });
+        fetchUserRole();
       } else {
         setIsAdmin(false);
       }
