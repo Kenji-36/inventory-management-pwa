@@ -7,7 +7,7 @@ export function ErrorTrigger() {
   const [shouldThrow, setShouldThrow] = useState(false);
 
   if (shouldThrow) {
-    throw new Error('これはテストエラーです - Sentry動作確認用');
+    throw new Error('[TEST-1] エラーバウンダリーテスト - React Error Boundary');
   }
 
   return (

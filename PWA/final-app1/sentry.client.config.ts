@@ -9,7 +9,7 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     tracesSampleRate: 1.0,
 
     // デバッグモード（開発時のみ有効）
-    debug: false,
+    debug: process.env.NODE_ENV === 'development',
 
     // エラーの再現に役立つ情報を収集
     replaysOnErrorSampleRate: 1.0,

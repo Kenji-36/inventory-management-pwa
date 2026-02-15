@@ -9,35 +9,63 @@ import { ErrorTrigger } from './error-trigger';
 export default function TestErrorPage() {
   const throwErrorDirect = () => {
     // エラーを直接Sentryに送信（エラーページは表示されない）
-    const error = new Error('直接送信テストエラー - Sentry動作確認用');
-    Sentry.captureException(error);
-    alert('✅ エラーをSentryに送信しました\n\nSentry Dashboardの「Issues」タブで確認してください');
+    const error = new Error('[TEST-2] 直接送信テストエラー');
+    Sentry.captureException(error, {
+      tags: {
+        test_type: 'direct_send',
+        test_number: '2'
+      },
+      level: 'error'
+    });
+    console.log('✅ [TEST-2] エラーをSentryに送信しました');
+    alert('✅ エラーをSentryに送信しました\n\nブラウザのコンソールとSentry Dashboardを確認してください');
   };
 
   const captureMessage = () => {
-    Sentry.captureMessage('テストメッセージ - Sentry動作確認', 'info');
-    alert('✅ メッセージをSentryに送信しました\n\nSentry Dashboardの「Issues」タブで確認してください');
+    Sentry.captureMessage('[TEST-3] テストメッセージ - 情報送信テスト', {
+      level: 'info',
+      tags: {
+        test_type: 'message',
+        test_number: '3'
+      }
+    });
+    console.log('✅ [TEST-3] メッセージをSentryに送信しました');
+    alert('✅ メッセージをSentryに送信しました\n\nブラウザのコンソールとSentry Dashboardを確認してください');
   };
 
   const captureException = () => {
     try {
-      throw new Error('手動でキャプチャしたエラー - テスト用');
+      throw new Error('[TEST-4] 手動キャプチャエラー - try-catchテスト');
     } catch (error) {
-      Sentry.captureException(error);
-      alert('✅ エラーをSentryに送信しました\n\nSentry Dashboardの「Issues」タブで確認してください');
+      Sentry.captureException(error, {
+        tags: {
+          test_type: 'try_catch',
+          test_number: '4'
+        },
+        level: 'warning'
+      });
+      console.log('✅ [TEST-4] エラーをSentryに送信しました');
+      alert('✅ エラーをSentryに送信しました\n\nブラウザのコンソールとSentry Dashboardを確認してください');
     }
   };
 
   const testApiError = async () => {
     try {
       // 存在しないAPIエンドポイントを呼び出してエラーを発生させる
-      const response = await fetch('/api/test-sentry-error');
+      const response = await fetch('/api/test-sentry-error-endpoint-' + Date.now());
       if (!response.ok) {
-        throw new Error('API Error Test');
+        throw new Error('[TEST-5] APIエラーテスト - 404 Not Found');
       }
     } catch (error) {
-      Sentry.captureException(error);
-      alert('✅ APIエラーをSentryに送信しました\n\nSentry Dashboardで確認してください');
+      Sentry.captureException(error, {
+        tags: {
+          test_type: 'api_error',
+          test_number: '5'
+        },
+        level: 'error'
+      });
+      console.log('✅ [TEST-5] APIエラーをSentryに送信しました');
+      alert('✅ APIエラーをSentryに送信しました\n\nブラウザのコンソールとSentry Dashboardを確認してください');
     }
   };
 
@@ -50,6 +78,10 @@ export default function TestErrorPage() {
             <CardDescription>
               各ボタンをクリックして、Sentryにエラーが送信されることを確認してください
             </CardDescription>
+            <div className="mt-4 p-3 bg-gray-100 rounded text-xs">
+              <p><strong>Sentry DSN:</strong> {process.env.NEXT_PUBLIC_SENTRY_DSN ? '✅ 設定済み' : '❌ 未設定'}</p>
+              <p><strong>環境:</strong> {process.env.NODE_ENV}</p>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
