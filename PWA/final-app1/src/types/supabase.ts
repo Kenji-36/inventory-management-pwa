@@ -17,6 +17,41 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          id: number
+          user_id: string | null
+          user_email: string | null
+          action: string
+          target_table: string | null
+          target_id: string | null
+          details: Json | null
+          ip_address: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          user_id?: string | null
+          user_email?: string | null
+          action: string
+          target_table?: string | null
+          target_id?: string | null
+          details?: Json | null
+          ip_address?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string | null
+          user_email?: string | null
+          action?: string
+          target_table?: string | null
+          target_id?: string | null
+          details?: Json | null
+          ip_address?: string | null
+          created_at?: string
+        }
+      }
       products: {
         Row: {
           id: number

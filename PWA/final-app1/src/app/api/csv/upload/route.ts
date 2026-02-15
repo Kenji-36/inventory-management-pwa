@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { requireAuth, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
 import { validateProduct, validateFileSize, sanitizeString } from "@/lib/validation";
+import { recordAuditLog } from "@/lib/audit-log";
 
 interface CsvProduct {
   商品ID?: number;
@@ -282,6 +283,15 @@ export async function POST(request: Request) {
         addedCount++;
       }
     }
+
+    // 監査ログに記録
+    await recordAuditLog({
+      userId: auth.user.id,
+      userEmail: auth.user.email,
+      action: 'csv_import',
+      targetTable: 'products',
+      details: { added: addedCount, updated: updatedCount, errors: processingErrors.length },
+    });
 
     return NextResponse.json({
       success: true,

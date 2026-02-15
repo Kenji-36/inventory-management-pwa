@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { requireAuth, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
 import { validateOrderQuantity, validatePrice } from "@/lib/validation";
+import { recordAuditLog } from "@/lib/audit-log";
 import type { Order } from "@/types";
 
 /**
@@ -205,6 +206,16 @@ export async function POST(request: Request) {
         console.warn(`在庫更新スキップ: 商品ID ${item.productId}`, e);
       }
     }
+
+    // 監査ログに記録
+    await recordAuditLog({
+      userId: auth.user.id,
+      userEmail: auth.user.email,
+      action: 'create',
+      targetTable: 'orders',
+      targetId: String(newOrder.id),
+      details: { itemCount: items.length, totalInclTax },
+    });
 
     return NextResponse.json({
       success: true,

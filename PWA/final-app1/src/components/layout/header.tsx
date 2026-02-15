@@ -11,7 +11,8 @@ import {
   LogOut,
   Menu,
   X,
-  Boxes
+  Boxes,
+  Shield
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -25,21 +26,50 @@ const navigation = [
   { name: "設定", href: "/settings", icon: Settings },
 ];
 
+// 管理者のみ表示するナビゲーション
+const adminNavigation = [
+  { name: "管理者", href: "/admin", icon: Shield },
+];
+
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     // 初期ユーザー取得
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
+      if (user) {
+        // ロールを確認
+        supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+          .then(({ data }: { data: { role: string } | null }) => {
+            setIsAdmin(data?.role === 'admin');
+          });
+      }
     });
 
     // 認証状態の変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        supabase
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data }: { data: { role: string } | null }) => {
+            setIsAdmin(data?.role === 'admin');
+          });
+      } else {
+        setIsAdmin(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -87,6 +117,28 @@ export function Header() {
                   <item.icon className={cn(
                     "h-4 w-4 mr-2 transition-colors",
                     isActive ? "text-gray-700" : "text-gray-400"
+                  )} />
+                  {item.name}
+                </Link>
+              );
+            })}
+            {/* 管理者のみ表示 */}
+            {isAdmin && adminNavigation.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200",
+                    isActive
+                      ? "bg-amber-100 text-amber-800 shadow-sm"
+                      : "text-amber-600 hover:text-amber-800"
+                  )}
+                >
+                  <item.icon className={cn(
+                    "h-4 w-4 mr-2 transition-colors",
+                    isActive ? "text-amber-700" : "text-amber-400"
                   )} />
                   {item.name}
                 </Link>
@@ -156,6 +208,29 @@ export function Header() {
                     <item.icon className={cn(
                       "h-5 w-5 mr-3",
                       isActive ? "text-gray-700" : "text-gray-400"
+                    )} />
+                    {item.name}
+                  </Link>
+                );
+              })}
+              {/* 管理者のみ表示 */}
+              {isAdmin && adminNavigation.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all",
+                      isActive
+                        ? "bg-amber-100 text-amber-800"
+                        : "text-amber-600 hover:bg-amber-50"
+                    )}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <item.icon className={cn(
+                      "h-5 w-5 mr-3",
+                      isActive ? "text-amber-700" : "text-amber-400"
                     )} />
                     {item.name}
                   </Link>

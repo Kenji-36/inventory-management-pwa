@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { requireAuth, checkRateLimit, rateLimitResponse } from "@/lib/api-auth";
 import { validateStockQuantity } from "@/lib/validation";
+import { recordAuditLog } from "@/lib/audit-log";
 
 /**
  * 在庫情報を取得
@@ -172,6 +173,16 @@ export async function PUT(request: Request) {
     if (updateError) {
       throw updateError;
     }
+
+    // 監査ログに記録
+    await recordAuditLog({
+      userId: auth.user.id,
+      userEmail: auth.user.email,
+      action: 'update',
+      targetTable: 'stock',
+      targetId: String(productId),
+      details: { previousQuantity: currentQuantity, newQuantity },
+    });
 
     return NextResponse.json({
       success: true,
