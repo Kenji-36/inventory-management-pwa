@@ -38,3 +38,11 @@ next-env.d.ts
 
 # archive
 /archive
+
+# Sentry Config File
+.env.sentry-build-plugin
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/

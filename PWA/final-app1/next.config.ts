@@ -20,10 +20,10 @@ const nextConfig: NextConfig = {
   // Turbopack設定（Next.js 16対応）
   turbopack: {},
 
-  // Sentry用のinstrumentationを有効化
-  experimental: {
-    instrumentationHook: true,
-  },
+  // Sentry用のinstrumentationを有効化（Next.js 16ではデフォルトで有効）
+  // experimental: {
+  //   instrumentationHook: true,
+  // },
 
   // 外部画像の許可（Supabase Storage）- 環境変数から動的に取得
   images: {
@@ -119,21 +119,32 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Sentry設定でラップ
-export default withSentryConfig(
-  withPWA(nextConfig),
-  {
-    // Sentryの追加設定
-    silent: true, // ビルド時のログを抑制
-    org: process.env.SENTRY_ORG,
-    project: process.env.SENTRY_PROJECT,
-  },
-  {
+// Sentry設定でラップ（環境変数が設定されている場合のみ）
+const config = withPWA(nextConfig);
+
+// Sentryが有効な場合のみSentry設定を適用
+if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  module.exports = withSentryConfig(config, {
+    // Sentry組織とプロジェクト
+    org: process.env.SENTRY_ORG || "kenji-lf",
+    project: process.env.SENTRY_PROJECT || "inventory-management-pwa",
+
+    // ビルドログを抑制（CIでは表示）
+    silent: !process.env.CI,
+
     // ソースマップのアップロード設定
     widenClientFileUpload: true,
-    transpileClientSDK: true,
+
+    // 広告ブロッカー回避のためのトンネルルート
     tunnelRoute: "/monitoring",
-    hideSourceMaps: true,
-    disableLogger: true,
-  }
-);
+
+    // ソースマップの設定
+    sourcemaps: {
+      disable: false, // ソースマップを有効化
+    },
+  });
+} else {
+  module.exports = config;
+}
+
+export default module.exports;
