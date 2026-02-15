@@ -12,7 +12,8 @@ import {
   Menu,
   X,
   Boxes,
-  Shield
+  Shield,
+  BarChart3
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ const navigation = [
   { name: "ダッシュボード", href: "/", icon: LayoutDashboard },
   { name: "在庫管理", href: "/inventory", icon: Package },
   { name: "注文管理", href: "/orders", icon: ShoppingCart },
+  { name: "レポート", href: "/reports", icon: BarChart3 },
   { name: "設定", href: "/settings", icon: Settings },
 ];
 
