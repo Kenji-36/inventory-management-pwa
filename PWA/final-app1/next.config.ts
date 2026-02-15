@@ -79,10 +79,10 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.sentry.io",
               "style-src 'self' 'unsafe-inline'",
               `img-src 'self' https://${supabaseHost} data: blob:`,
-              `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://accounts.google.com https://www.googleapis.com`,
+              `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://accounts.google.com https://www.googleapis.com https://*.ingest.us.sentry.io https://*.sentry.io`,
               "font-src 'self' data:",
               "frame-src 'self' https://accounts.google.com",
               "object-src 'none'",

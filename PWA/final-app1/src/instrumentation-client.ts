@@ -4,28 +4,40 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN || "https://8a0cb5e15ed2e68343e6515ee771a6f3@o4510887920074752.ingest.us.sentry.io/4510887931543552";
+
 Sentry.init({
-  dsn: "https://8a0cb5e15ed2e68343e6515ee771a6f3@o4510887920074752.ingest.us.sentry.io/4510887931543552",
+  dsn: SENTRY_DSN,
 
   // Add optional integrations for additional features
   integrations: [Sentry.replayIntegration()],
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+  // 全エラーを送信（本番環境では調整推奨）
   tracesSampleRate: 1,
-  // Enable logs to be sent to Sentry
+
+  // ログをSentryに送信
   enableLogs: true,
 
-  // Define how likely Replay events are sampled.
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
+  // セッションリプレイのサンプリングレート（10%）
   replaysSessionSampleRate: 0.1,
 
-  // Define how likely Replay events are sampled when an error occurs.
+  // エラー発生時のリプレイサンプリングレート（100%）
   replaysOnErrorSampleRate: 1.0,
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  // PII送信を無効化（セキュリティ）
+  sendDefaultPii: false,
+
+  // 環境設定
+  environment: process.env.NODE_ENV,
+
+  // デバッグモード（開発環境のみ）
+  debug: process.env.NODE_ENV === 'development',
+
+  // イベント送信前のフック（デバッグ用）
+  beforeSend(event) {
+    console.log('[Sentry] Sending event:', event.event_id, event.message || event.exception?.values?.[0]?.value);
+    return event;
+  },
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
