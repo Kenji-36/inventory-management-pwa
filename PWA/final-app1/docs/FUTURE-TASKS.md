@@ -70,11 +70,17 @@ jobs:
 - ✅ @sentry/nextjs パッケージインストール
 - ✅ Sentry設定ファイル作成（client/server/edge）
 - ✅ グローバルエラーページ作成（error.tsx）
-- ✅ Vercel Analytics統合
+- ✅ エラーバウンダリーコンポーネント作成（ErrorBoundaryTest）
+- ✅ Vercel Analytics統合（@vercel/analytics）
 - ✅ テストページ作成（/test-error）
+  - 5種類のエラーテスト方法を実装
+  - エラーバウンダリーの動作確認
 - ✅ ERROR-MONITORING-GUIDE.md 作成（初学者向けガイド）
+- ✅ SENTRY-AUTH-TOKEN-GUIDE.md 作成（認証トークン取得手順）
+- ✅ Vercel環境変数設定
+- ✅ 動作確認完了（Sentryダッシュボードでエラー確認済み）
 
-**完了日**: 2026年2月13日  
+**完了日**: 2026年2月15日  
 **推定工数**: 1日 → **実績**: 1日
 
 ---
