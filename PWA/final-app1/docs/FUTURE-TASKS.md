@@ -10,18 +10,27 @@
 
 ### 🔴 優先度：高（すぐに対応推奨）
 
-#### 1. CI/CDパイプラインの構築
+#### 1. CI/CDパイプラインの構築 ✅ 完了
 **目的**: 自動テスト・デプロイの効率化
 
 **タスク**:
-- [ ] GitHub Actionsワークフローの作成
-  - [ ] プルリクエスト時の自動テスト実行
-  - [ ] mainブランチマージ時の自動デプロイ
-  - [ ] テストカバレッジレポートの自動生成
-- [ ] デプロイ前のビルドチェック
-- [ ] Vercelプレビューデプロイの活用
+- [x] GitHub Actionsワークフローの作成
+  - [x] プルリクエスト時の自動テスト実行
+  - [x] mainブランチマージ時の自動デプロイ
+  - [ ] テストカバレッジレポートの自動生成（オプション）
+- [x] デプロイ前のビルドチェック
+- [x] Vercelプレビューデプロイの活用（Vercel自動連携）
 
-**推定工数**: 1-2日
+**実施内容**:
+- ✅ `.github/workflows/test.yml` 作成（Lint + Test + Build）
+- ✅ `.github/workflows/e2e.yml` 作成（E2Eテスト）
+- ✅ CI-CD-GUIDE.md 作成（初学者向けガイド）
+- ✅ GITHUB-SECRETS-SETUP.md 作成（設定手順書）
+- ✅ READMEにステータスバッジ追加
+- ✅ 全テスト成功確認（41テスト + 5 E2Eテスト）
+
+**完了日**: 2026年2月13日  
+**推定工数**: 1-2日 → **実績**: 1日
 
 **参考実装**:
 ```yaml
@@ -399,6 +408,18 @@ ALTER TABLE users ADD COLUMN role_id INTEGER REFERENCES roles(id);
 - Supabase Discord
 - Next.js Discord
 - Stack Overflow
+
+---
+
+## ✅ 完了済みタスク
+
+### 2026年2月13日
+- ✅ **CI/CDパイプラインの構築**
+  - GitHub Actions ワークフロー作成（Test + E2E Tests）
+  - CI/CDガイドドキュメント作成
+  - GitHub Secrets設定手順書作成
+  - ステータスバッジ追加
+  - 全46テスト成功確認
 
 ---
 
