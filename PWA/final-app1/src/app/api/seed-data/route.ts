@@ -1,181 +1,138 @@
 /**
- * テスト用サンプルデータをGoogle Spreadsheetに追加するAPI
+ * テスト用サンプルデータをSupabaseに追加するAPI
  * POST /api/seed-data
+ * 
+ * 直近30日間のサンプル注文データを生成し、
+ * ダッシュボードやレポートの売上推移グラフを確認するために使用できます。
  */
 
 import { NextResponse } from "next/server";
-import { appendSheetData, getSheetData, SHEET_NAMES } from "@/lib/sheets";
-import { requireAdmin } from "@/lib/api-auth";
+import { requireAuth } from "@/lib/api-auth";
+import { supabaseServer } from "@/lib/supabase-server";
 
 export async function POST() {
-  // 本番環境ではアクセス不可
-  if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-  const adminResult = await requireAdmin();
-  if (!adminResult.authenticated) {
-    return adminResult.response;
+  const authResult = await requireAuth();
+  if (!authResult.authenticated) {
+    return authResult.response;
   }
 
   try {
-    // 既存の注文IDを取得して最大値を確認
-    const existingOrders = await getSheetData(SHEET_NAMES.ORDERS);
-    const existingDetails = await getSheetData(SHEET_NAMES.ORDER_DETAILS);
-    
-    // 最大IDを取得
-    const maxOrderId = existingOrders.length > 0 
-      ? Math.max(...existingOrders.filter(o => o["注文ID"]).map(o => Number(o["注文ID"])))
-      : 1000;
-    
-    const maxDetailId = existingDetails.length > 0
-      ? Math.max(...existingDetails.filter(d => d["明細ID"]).map(d => Number(d["明細ID"])))
-      : 1000;
-
     // 商品データを取得
-    const products = await getSheetData(SHEET_NAMES.PRODUCTS);
-    const productList = products.filter(p => p["商品ID"]).slice(0, 10);
+    const { data: products, error: prodError } = await supabaseServer
+      .from('products')
+      .select('id, price_excluding_tax, price_including_tax')
+      .limit(10);
 
-    if (productList.length === 0) {
+    if (prodError || !products || products.length === 0) {
       return NextResponse.json({
         success: false,
-        error: "商品データがありません",
+        error: '商品データがありません。先にCSVインポートで商品を登録してください。',
       }, { status: 400 });
     }
 
     // 直近30日分のサンプルデータを作成
     const now = new Date();
-    const ordersToAdd: (string | number)[][] = [];
-    const detailsToAdd: (string | number)[][] = [];
-    
-    let orderId = maxOrderId + 1;
-    let detailId = maxDetailId + 1;
+    let ordersAdded = 0;
+    let detailsAdded = 0;
 
     for (let i = 29; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-      const dateStr = date.toISOString().replace("T", " ").slice(0, 19);
-      
+      const dateStr = date.toISOString().split('T')[0];
+
       // 1日あたり1〜3件の注文をランダムに作成
       const orderCount = Math.floor(Math.random() * 3) + 1;
-      
+
       for (let j = 0; j < orderCount; j++) {
         // ランダムに商品を選択（1〜4商品）
-        const itemCount = Math.floor(Math.random() * 4) + 1;
-        const selectedProducts = [...productList]
+        const itemCount = Math.min(Math.floor(Math.random() * 4) + 1, products.length);
+        const selectedProducts = [...products]
           .sort(() => Math.random() - 0.5)
           .slice(0, itemCount);
-        
+
         let orderTotalExclTax = 0;
         let orderTotalInclTax = 0;
         let totalQuantity = 0;
-        
-        // 注文詳細を作成
+
+        // 注文明細データを準備
+        const details: Array<{
+          product_id: number;
+          quantity: number;
+          unit_price_excluding_tax: number;
+          unit_price_including_tax: number;
+          subtotal_excluding_tax: number;
+          subtotal_including_tax: number;
+        }> = [];
+
         for (const product of selectedProducts) {
           const quantity = Math.floor(Math.random() * 3) + 1;
-          const priceExclTax = Number(product["税抜価格"]) || 1000;
-          const priceInclTax = Number(product["税込価格"]) || 1100;
+          const priceExclTax = product.price_excluding_tax || 1000;
+          const priceInclTax = product.price_including_tax || 1100;
           const subtotalExclTax = priceExclTax * quantity;
           const subtotalInclTax = priceInclTax * quantity;
-          
-          detailsToAdd.push([
-            detailId,                    // 明細ID
-            orderId,                     // 注文ID
-            Number(product["商品ID"]),   // 商品ID
-            quantity,                    // 数量
-            priceExclTax,               // 単価(税抜)
-            priceInclTax,               // 単価(税込)
-            subtotalExclTax,            // 小計(税抜)
-            subtotalInclTax,            // 小計(税込)
-            dateStr,                    // 作成日
-            dateStr,                    // 更新日
-          ]);
-          
+
+          details.push({
+            product_id: product.id,
+            quantity,
+            unit_price_excluding_tax: priceExclTax,
+            unit_price_including_tax: priceInclTax,
+            subtotal_excluding_tax: subtotalExclTax,
+            subtotal_including_tax: subtotalInclTax,
+          });
+
           orderTotalExclTax += subtotalExclTax;
           orderTotalInclTax += subtotalInclTax;
           totalQuantity += quantity;
-          detailId++;
         }
-        
-        // 注文情報を作成
-        ordersToAdd.push([
-          orderId,                    // 注文ID
-          totalQuantity,              // 商品数
-          `¥${orderTotalExclTax.toLocaleString()}`,  // 注文金額(税抜)
-          `¥${orderTotalInclTax.toLocaleString()}`,  // 注文金額(税込)
-          dateStr,                    // 注文日
-        ]);
-        
-        orderId++;
+
+        // 注文をSupabaseに挿入
+        const { data: newOrder, error: orderError } = await supabaseServer
+          .from('orders')
+          .insert({
+            item_count: totalQuantity,
+            total_price_excluding_tax: orderTotalExclTax,
+            total_price_including_tax: orderTotalInclTax,
+            order_date: dateStr,
+          })
+          .select('id')
+          .single();
+
+        if (orderError || !newOrder) {
+          console.error('注文追加エラー:', orderError);
+          continue;
+        }
+
+        // 注文明細をSupabaseに挿入
+        const detailsWithOrderId = details.map(d => ({
+          ...d,
+          order_id: newOrder.id,
+        }));
+
+        const { error: detailError } = await supabaseServer
+          .from('order_details')
+          .insert(detailsWithOrderId);
+
+        if (detailError) {
+          console.error('明細追加エラー:', detailError);
+        } else {
+          detailsAdded += details.length;
+        }
+
+        ordersAdded++;
       }
     }
 
-    // Google Spreadsheetに追加
-    if (ordersToAdd.length > 0) {
-      await appendSheetData(SHEET_NAMES.ORDERS, ordersToAdd);
-    }
-    
-    if (detailsToAdd.length > 0) {
-      await appendSheetData(SHEET_NAMES.ORDER_DETAILS, detailsToAdd);
-    }
-
     return NextResponse.json({
       success: true,
-      message: `${ordersToAdd.length}件の注文と${detailsToAdd.length}件の明細を追加しました`,
+      message: `${ordersAdded}件の注文と${detailsAdded}件の明細を追加しました`,
       data: {
-        ordersAdded: ordersToAdd.length,
-        detailsAdded: detailsToAdd.length,
+        ordersAdded,
+        detailsAdded,
       },
     });
   } catch (error) {
-    console.error("Seed Data API Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    
-    return NextResponse.json(
-      { success: false, error: errorMessage },
-      { status: 500 }
-    );
-  }
-}
+    console.error('Seed Data API Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-// GETでデータ状況を確認
-export async function GET() {
-  // 本番環境ではアクセス不可
-  if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-  const adminResult = await requireAdmin();
-  if (!adminResult.authenticated) {
-    return adminResult.response;
-  }
-
-  try {
-    const orders = await getSheetData(SHEET_NAMES.ORDERS);
-    const details = await getSheetData(SHEET_NAMES.ORDER_DETAILS);
-    
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split("T")[0];
-    
-    const recentOrders = orders.filter(o => {
-      const orderDate = String(o["注文日"] || "").split(" ")[0];
-      return orderDate >= thirtyDaysAgoStr;
-    });
-    
-    return NextResponse.json({
-      success: true,
-      data: {
-        totalOrders: orders.filter(o => o["注文ID"]).length,
-        totalDetails: details.filter(d => d["明細ID"]).length,
-        recentOrders: recentOrders.length,
-        dateRange: {
-          from: thirtyDaysAgoStr,
-          to: now.toISOString().split("T")[0],
-        },
-      },
-    });
-  } catch (error) {
-    console.error("Seed Data API Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    
     return NextResponse.json(
       { success: false, error: errorMessage },
       { status: 500 }
