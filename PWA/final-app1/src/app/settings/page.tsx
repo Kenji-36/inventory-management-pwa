@@ -20,7 +20,7 @@ export default function SettingsPage() {
   const [supaUser, setSupaUser] = useState<User | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
   const [userRole, setUserRole] = useState<string>('読み込み中...');
-  const [displayName, setDisplayName] = useState<string>('');
+  const [displayName, setDisplayName] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setSupaUser(user));
@@ -167,7 +167,7 @@ export default function SettingsPage() {
                 )}
                 <div>
                   <p className="font-medium text-lg">
-                    {displayName || supaUser?.email?.split('@')[0] || "ユーザー"}
+                    {displayName === null ? '読み込み中...' : (displayName || "ユーザー")}
                   </p>
                   <p className="text-gray-600">{supaUser?.email}</p>
                 </div>

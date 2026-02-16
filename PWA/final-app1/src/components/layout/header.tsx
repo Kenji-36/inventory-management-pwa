@@ -39,7 +39,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [displayName, setDisplayName] = useState<string>('');
+  const [displayName, setDisplayName] = useState<string | null>(null);
 
   // API経由でユーザーのロールと表示名を取得（RLS制限を回避）
   const fetchUserInfo = async () => {
@@ -74,7 +74,7 @@ export function Header() {
         fetchUserInfo();
       } else {
         setIsAdmin(false);
-        setDisplayName('');
+        setDisplayName(null);
       }
     });
 
@@ -163,8 +163,8 @@ export function Header() {
                     className="h-8 w-8 rounded-xl ring-2 ring-white"
                   />
                 )}
-                <span className="text-sm font-medium text-gray-700">
-                  {displayName || user.email?.split('@')[0] || user.email}
+                <span className="text-sm font-medium text-gray-700 min-w-[3rem]">
+                  {displayName === null ? '' : displayName}
                 </span>
               </div>
             )}
@@ -254,7 +254,7 @@ export function Header() {
                   )}
                   <div>
                     <span className="text-sm font-medium text-gray-900 block">
-                      {displayName || user.email?.split('@')[0] || user.email}
+                      {displayName === null ? '' : displayName}
                     </span>
                     <span className="text-xs text-gray-500">
                       {user.email}

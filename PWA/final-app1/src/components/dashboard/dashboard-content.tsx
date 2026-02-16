@@ -64,7 +64,7 @@ interface DashboardContentProps {
 export function DashboardContent({ userName: initialName }: DashboardContentProps) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [userName, setUserName] = useState(initialName);
+  const [userName, setUserName] = useState('');
 
   // API経由でユーザー名を取得（usersテーブルのnameを使用）
   useEffect(() => {
@@ -73,15 +73,12 @@ export function DashboardContent({ userName: initialName }: DashboardContentProp
       .then(data => {
         if (data.success && data.user.name) {
           setUserName(data.user.name);
+        } else {
+          setUserName(initialName);
         }
       })
       .catch(() => {
-        // フォールバック: Supabaseから直接取得
-        supabase.auth.getUser().then(({ data: { user } }) => {
-          if (user) {
-            setUserName(user.email?.split('@')[0] || initialName);
-          }
-        });
+        setUserName(initialName);
       });
   }, [initialName]);
   const [error, setError] = useState<string | null>(null);
