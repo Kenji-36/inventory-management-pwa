@@ -39,15 +39,17 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [displayName, setDisplayName] = useState<string>('');
 
-  // API経由でユーザーのロールを取得（RLS制限を回避）
-  const fetchUserRole = async () => {
+  // API経由でユーザーのロールと表示名を取得（RLS制限を回避）
+  const fetchUserInfo = async () => {
     try {
       const res = await fetch('/api/auth/me');
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
           setIsAdmin(data.user.isAdmin === true);
+          setDisplayName(data.user.name || '');
         }
       }
     } catch {
@@ -61,7 +63,7 @@ export function Header() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       if (user) {
-        fetchUserRole();
+        fetchUserInfo();
       }
     });
 
@@ -69,9 +71,10 @@ export function Header() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserRole();
+        fetchUserInfo();
       } else {
         setIsAdmin(false);
+        setDisplayName('');
       }
     });
 
@@ -161,7 +164,7 @@ export function Header() {
                   />
                 )}
                 <span className="text-sm font-medium text-gray-700">
-                  {user.email?.split('@')[0] || user.email}
+                  {displayName || user.email?.split('@')[0] || user.email}
                 </span>
               </div>
             )}
@@ -251,7 +254,7 @@ export function Header() {
                   )}
                   <div>
                     <span className="text-sm font-medium text-gray-900 block">
-                      {user.email?.split('@')[0] || user.email}
+                      {displayName || user.email?.split('@')[0] || user.email}
                     </span>
                     <span className="text-xs text-gray-500">
                       {user.email}

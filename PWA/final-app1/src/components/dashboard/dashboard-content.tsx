@@ -66,15 +66,23 @@ export function DashboardContent({ userName: initialName }: DashboardContentProp
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState(initialName);
 
-  // Supabase からユーザー名を取得
+  // API経由でユーザー名を取得（usersテーブルのnameを使用）
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        // メールアドレスの@より前の部分を表示名として使用
-        const emailName = user.email?.split('@')[0] || '';
-        setUserName(emailName || initialName);
-      }
-    });
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.user.name) {
+          setUserName(data.user.name);
+        }
+      })
+      .catch(() => {
+        // フォールバック: Supabaseから直接取得
+        supabase.auth.getUser().then(({ data: { user } }) => {
+          if (user) {
+            setUserName(user.email?.split('@')[0] || initialName);
+          }
+        });
+      });
   }, [initialName]);
   const [error, setError] = useState<string | null>(null);
 

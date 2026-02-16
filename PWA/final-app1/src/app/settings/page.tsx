@@ -20,15 +20,17 @@ export default function SettingsPage() {
   const [supaUser, setSupaUser] = useState<User | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
   const [userRole, setUserRole] = useState<string>('読み込み中...');
+  const [displayName, setDisplayName] = useState<string>('');
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setSupaUser(user));
-    // API経由で実際のロールを取得
+    // API経由で実際のロールとユーザー名を取得
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => {
         if (data.success) {
           setUserRole(data.user.isAdmin ? '管理者' : '一般ユーザー');
+          setDisplayName(data.user.name || '');
         } else {
           setUserRole('不明');
         }
@@ -165,7 +167,7 @@ export default function SettingsPage() {
                 )}
                 <div>
                   <p className="font-medium text-lg">
-                    {supaUser?.email?.split('@')[0] || "ユーザー"}
+                    {displayName || supaUser?.email?.split('@')[0] || "ユーザー"}
                   </p>
                   <p className="text-gray-600">{supaUser?.email}</p>
                 </div>

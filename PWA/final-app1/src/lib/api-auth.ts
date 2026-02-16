@@ -89,10 +89,10 @@ export async function validateAdminPermission() {
   }
 
   try {
-    // usersテーブルからroleを取得
+    // usersテーブルからroleとnameを取得
     const { data: userData, error: userError } = await supabaseServer
       .from('users')
-      .select('role')
+      .select('role, name')
       .eq('id', sessionResult.user.id)
       .single();
 
@@ -107,7 +107,10 @@ export async function validateAdminPermission() {
 
     return {
       valid: true as const,
-      user: sessionResult.user,
+      user: {
+        ...sessionResult.user,
+        name: userData.name || sessionResult.user.email?.split('@')[0] || sessionResult.user.name,
+      },
       isAdmin: userData.role === 'admin',
     };
   } catch (error) {
