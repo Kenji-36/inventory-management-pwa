@@ -70,9 +70,9 @@ export function DashboardContent({ userName: initialName }: DashboardContentProp
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        // メールアドレスの@より前の部分をデフォルト名として使用
+        // メールアドレスの@より前の部分を表示名として使用
         const emailName = user.email?.split('@')[0] || '';
-        setUserName(user.user_metadata?.full_name || user.user_metadata?.name || emailName || initialName);
+        setUserName(emailName || initialName);
       }
     });
   }, [initialName]);
