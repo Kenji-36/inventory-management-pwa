@@ -156,12 +156,12 @@ export function Header() {
                 {user.user_metadata?.avatar_url && (
                   <img
                     src={user.user_metadata.avatar_url}
-                    alt={user.user_metadata?.name || user.email || "User"}
+                    alt={user.email || "User"}
                     className="h-8 w-8 rounded-xl ring-2 ring-white"
                   />
                 )}
                 <span className="text-sm font-medium text-gray-700">
-                  {user.user_metadata?.name || user.email}
+                  {user.email?.split('@')[0] || user.email}
                 </span>
               </div>
             )}
@@ -245,13 +245,13 @@ export function Header() {
                   {user.user_metadata?.avatar_url && (
                     <img
                       src={user.user_metadata.avatar_url}
-                      alt={user.user_metadata?.name || user.email || "User"}
+                      alt={user.email || "User"}
                       className="h-10 w-10 rounded-xl"
                     />
                   )}
                   <div>
                     <span className="text-sm font-medium text-gray-900 block">
-                      {user.user_metadata?.name || user.email}
+                      {user.email?.split('@')[0] || user.email}
                     </span>
                     <span className="text-xs text-gray-500">
                       {user.email}
