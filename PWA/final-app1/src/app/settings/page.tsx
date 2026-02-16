@@ -19,9 +19,21 @@ interface DbStatus {
 export default function SettingsPage() {
   const [supaUser, setSupaUser] = useState<User | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [userRole, setUserRole] = useState<string>('読み込み中...');
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setSupaUser(user));
+    // API経由で実際のロールを取得
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setUserRole(data.user.isAdmin ? '管理者' : '一般ユーザー');
+        } else {
+          setUserRole('不明');
+        }
+      })
+      .catch(() => setUserRole('取得エラー'));
   }, []);
   const [seedResult, setSeedResult] = useState<{ success: boolean; message: string } | null>(null);
   const [dbStatus, setDbStatus] = useState<DbStatus | null>(null);
@@ -315,11 +327,17 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
-                <span className="px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full">
-                  管理者
+                <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                  userRole === '管理者'
+                    ? 'text-blue-800 bg-blue-100'
+                    : 'text-gray-800 bg-gray-100'
+                }`}>
+                  {userRole}
                 </span>
                 <span className="text-sm text-gray-500">
-                  （全ての機能にアクセス可能）
+                  {userRole === '管理者'
+                    ? '（全ての機能にアクセス可能）'
+                    : '（基本機能にアクセス可能）'}
                 </span>
               </div>
             </CardContent>
