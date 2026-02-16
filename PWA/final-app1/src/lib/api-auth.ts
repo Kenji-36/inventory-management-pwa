@@ -61,7 +61,7 @@ export async function validateSession() {
       user: {
         id: user.id,
         email: user.email || '',
-        name: user.user_metadata?.name || user.email || '',
+        name: user.email?.split('@')[0] || user.email || '',
         image: user.user_metadata?.avatar_url || null,
       },
     };
@@ -109,7 +109,7 @@ export async function validateAdminPermission() {
       valid: true as const,
       user: {
         ...sessionResult.user,
-        name: userData.name || sessionResult.user.email?.split('@')[0] || sessionResult.user.name,
+        name: userData.name || sessionResult.user.email?.split('@')[0] || '',
       },
       isAdmin: userData.role === 'admin',
     };
