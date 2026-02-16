@@ -37,7 +37,11 @@ export async function POST() {
 
     for (let i = 29; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-      const dateStr = date.toISOString().split('T')[0];
+      // ランダムな時刻を付与（9:00〜20:59）
+      const hour = Math.floor(Math.random() * 12) + 9;
+      const minute = Math.floor(Math.random() * 60);
+      date.setHours(hour, minute, 0, 0);
+      const dateStr = date.toISOString();
 
       // 1日あたり1〜3件の注文をランダムに作成
       const orderCount = Math.floor(Math.random() * 3) + 1;

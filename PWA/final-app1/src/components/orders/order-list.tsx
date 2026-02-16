@@ -27,7 +27,9 @@ export function OrderList({ orders, onSelectOrder }: OrderListProps) {
 
   // 日付でグループ化
   const groupedOrders = orders.reduce((groups, order) => {
-    const date = order.注文日.split(" ")[0];
+    const date = order.注文日.includes('T')
+      ? order.注文日.split('T')[0]
+      : order.注文日.split(' ')[0];
     if (!groups[date]) {
       groups[date] = [];
     }
@@ -91,7 +93,10 @@ export function OrderList({ orders, onSelectOrder }: OrderListProps) {
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" />
-                          {order.注文日.split(" ")[1]?.slice(0, 5) || ""}
+                          {(() => {
+                            const d = new Date(order.注文日);
+                            return isNaN(d.getTime()) ? '' : d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+                          })()}
                         </span>
                       </div>
                     </div>

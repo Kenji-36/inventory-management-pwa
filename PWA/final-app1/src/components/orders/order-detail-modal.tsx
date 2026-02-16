@@ -58,7 +58,7 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
                 <div className="flex items-center gap-3 text-white/70 text-sm">
                   <span className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    {order.注文日.split(" ")[0]}
+                    {new Date(order.注文日).toLocaleDateString('ja-JP')}
                   </span>
                   <span className="flex items-center gap-1">
                     <ShoppingBag className="w-4 h-4" />
@@ -105,7 +105,12 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
                       <Calendar className="w-4 h-4" />
                       注文日時
                     </div>
-                    <p className="font-semibold text-gray-900">{details.注文日}</p>
+                    <p className="font-semibold text-gray-900">
+                      {new Date(details.注文日).toLocaleString('ja-JP', {
+                        year: 'numeric', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit',
+                      })}
+                    </p>
                   </div>
                   <div>
                     <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
