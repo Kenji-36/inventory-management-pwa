@@ -165,7 +165,7 @@ export default function SettingsPage() {
                 )}
                 <div>
                   <p className="font-medium text-lg">
-                    {supaUser?.user_metadata?.name || supaUser?.email || "ユーザー"}
+                    {supaUser?.email?.split('@')[0] || "ユーザー"}
                   </p>
                   <p className="text-gray-600">{supaUser?.email}</p>
                 </div>
