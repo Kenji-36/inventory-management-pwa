@@ -144,7 +144,7 @@ export function DashboardContent({ userName: initialName }: DashboardContentProp
         <h2 className="text-xl font-semibold text-gray-900 mb-2">接続エラー</h2>
         <p className="text-gray-500 mb-6 text-center max-w-md">
           {error}<br />
-          Google Spreadsheet の設定を確認してください
+          Supabase の接続設定を確認してください
         </p>
         <Button onClick={fetchData} size="lg" className="gap-2">
           <RefreshCw className="w-4 h-4" />

@@ -32,7 +32,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.4",
-    "googleapis": "^171.2.0",
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
