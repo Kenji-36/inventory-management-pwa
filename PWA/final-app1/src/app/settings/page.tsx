@@ -6,7 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User as UserIcon, Database, Bell, Shield, TestTube, Loader2, RefreshCw, CheckCircle, XCircle } from "lucide-react";
+import { User as UserIcon, Database, Bell, Shield, TestTube, Loader2, RefreshCw, CheckCircle, XCircle, AlertTriangle, Package, TrendingDown, Info } from "lucide-react";
 
 interface DbStatus {
   connected: boolean;
@@ -40,6 +40,79 @@ export default function SettingsPage() {
   const [seedResult, setSeedResult] = useState<{ success: boolean; message: string } | null>(null);
   const [dbStatus, setDbStatus] = useState<DbStatus | null>(null);
   const [isCheckingDb, setIsCheckingDb] = useState(false);
+
+  // 通知データ
+  interface StockAlert {
+    id: number;
+    name: string;
+    size: string;
+    quantity: number;
+  }
+  const [outOfStockItems, setOutOfStockItems] = useState<StockAlert[]>([]);
+  const [lowStockItems, setLowStockItems] = useState<StockAlert[]>([]);
+  const [recentMovements, setRecentMovements] = useState<number>(0);
+  const [todayOrders, setTodayOrders] = useState<number>(0);
+  const [isLoadingAlerts, setIsLoadingAlerts] = useState(true);
+
+  // 在庫アラート・通知データを取得
+  const fetchAlerts = async () => {
+    setIsLoadingAlerts(true);
+    try {
+      // 在庫情報を取得（products と結合）
+      const { data: stockData, error: stockError } = await supabase
+        .from('stock')
+        .select('quantity, product_id, products(id, name, size)')
+        .order('quantity', { ascending: true });
+
+      if (!stockError && stockData) {
+        const outOf: StockAlert[] = [];
+        const low: StockAlert[] = [];
+        for (const item of stockData as any[]) {
+          const product = item.products as any;
+          if (!product) continue;
+          const alert: StockAlert = {
+            id: product.id,
+            name: product.name,
+            size: product.size,
+            quantity: item.quantity,
+          };
+          if (item.quantity === 0) {
+            outOf.push(alert);
+          } else if (item.quantity <= 5) {
+            low.push(alert);
+          }
+        }
+        setOutOfStockItems(outOf);
+        setLowStockItems(low);
+      }
+
+      // 今日の注文数を取得
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { count: orderCount } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .gte('order_date', today.toISOString());
+      setTodayOrders(orderCount || 0);
+
+      // 直近24時間の入出庫件数を取得
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const { count: movementCount } = await supabase
+        .from('stock_movements')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', yesterday.toISOString());
+      setRecentMovements(movementCount || 0);
+
+    } catch (error) {
+      console.error('アラート取得エラー:', error);
+    } finally {
+      setIsLoadingAlerts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
 
   // データベース接続状態を確認
   const checkDbConnection = async () => {
@@ -298,21 +371,152 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* 通知設定 */}
+          {/* 通知設定 - 在庫アラート・システム通知 */}
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary" />
-                <CardTitle>通知設定</CardTitle>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-primary" />
+                  <CardTitle>通知・アラート</CardTitle>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchAlerts}
+                  disabled={isLoadingAlerts}
+                >
+                  {isLoadingAlerts ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                </Button>
               </div>
               <CardDescription>
-                在庫アラートやシステム通知の設定
+                在庫アラートやシステム通知の状況
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500">
-                この機能は今後のアップデートで追加予定です
-              </p>
+              {isLoadingAlerts ? (
+                <div className="flex items-center gap-2 py-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                  <span className="text-sm text-gray-500">アラートを読み込み中...</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* 在庫切れアラート */}
+                  <div className={`p-4 rounded-xl border-2 ${
+                    outOfStockItems.length > 0
+                      ? 'bg-red-50 border-red-200'
+                      : 'bg-gray-50 border-gray-200'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className={`w-5 h-5 ${
+                        outOfStockItems.length > 0 ? 'text-red-500' : 'text-gray-400'
+                      }`} />
+                      <span className={`font-semibold ${
+                        outOfStockItems.length > 0 ? 'text-red-800' : 'text-gray-600'
+                      }`}>
+                        在庫切れ
+                      </span>
+                      <span className={`ml-auto px-2 py-0.5 rounded-full text-xs font-bold ${
+                        outOfStockItems.length > 0
+                          ? 'bg-red-200 text-red-800'
+                          : 'bg-gray-200 text-gray-600'
+                      }`}>
+                        {outOfStockItems.length}件
+                      </span>
+                    </div>
+                    {outOfStockItems.length > 0 ? (
+                      <div className="space-y-1 ml-7">
+                        {outOfStockItems.slice(0, 5).map((item) => (
+                          <p key={item.id} className="text-sm text-red-700">
+                            {item.name}（{item.size}）
+                          </p>
+                        ))}
+                        {outOfStockItems.length > 5 && (
+                          <p className="text-xs text-red-500">
+                            ...他 {outOfStockItems.length - 5} 件
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 ml-7">在庫切れの商品はありません</p>
+                    )}
+                  </div>
+
+                  {/* 在庫少アラート */}
+                  <div className={`p-4 rounded-xl border-2 ${
+                    lowStockItems.length > 0
+                      ? 'bg-amber-50 border-amber-200'
+                      : 'bg-gray-50 border-gray-200'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingDown className={`w-5 h-5 ${
+                        lowStockItems.length > 0 ? 'text-amber-500' : 'text-gray-400'
+                      }`} />
+                      <span className={`font-semibold ${
+                        lowStockItems.length > 0 ? 'text-amber-800' : 'text-gray-600'
+                      }`}>
+                        在庫残少（5個以下）
+                      </span>
+                      <span className={`ml-auto px-2 py-0.5 rounded-full text-xs font-bold ${
+                        lowStockItems.length > 0
+                          ? 'bg-amber-200 text-amber-800'
+                          : 'bg-gray-200 text-gray-600'
+                      }`}>
+                        {lowStockItems.length}件
+                      </span>
+                    </div>
+                    {lowStockItems.length > 0 ? (
+                      <div className="space-y-1 ml-7">
+                        {lowStockItems.slice(0, 5).map((item) => (
+                          <p key={item.id} className="text-sm text-amber-700">
+                            {item.name}（{item.size}）- 残り{item.quantity}個
+                          </p>
+                        ))}
+                        {lowStockItems.length > 5 && (
+                          <p className="text-xs text-amber-500">
+                            ...他 {lowStockItems.length - 5} 件
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 ml-7">在庫残少の商品はありません</p>
+                    )}
+                  </div>
+
+                  {/* システム通知 */}
+                  <div className="p-4 rounded-xl bg-blue-50 border-2 border-blue-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Info className="w-5 h-5 text-blue-500" />
+                      <span className="font-semibold text-blue-800">システム通知</span>
+                    </div>
+                    <div className="space-y-2 ml-7">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-blue-700">今日の注文数</span>
+                        <span className="text-sm font-bold text-blue-900">{todayOrders}件</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-blue-700">直近24時間の入出庫</span>
+                        <span className="text-sm font-bold text-blue-900">{recentMovements}件</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-blue-700">アラート合計</span>
+                        <span className={`text-sm font-bold ${
+                          outOfStockItems.length + lowStockItems.length > 0
+                            ? 'text-red-600'
+                            : 'text-green-600'
+                        }`}>
+                          {outOfStockItems.length + lowStockItems.length > 0
+                            ? `${outOfStockItems.length + lowStockItems.length}件の注意事項`
+                            : '問題なし'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
