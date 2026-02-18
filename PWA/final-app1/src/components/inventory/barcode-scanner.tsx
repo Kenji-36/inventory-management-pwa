@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Camera, AlertCircle } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 interface BarcodeScannerProps {
   onScan: (code: string) => void;
@@ -16,6 +17,16 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
   const [isStarting, setIsStarting] = useState(false);
   const [isInIframe, setIsInIframe] = useState(false);
   const scannerRef = useRef<any>(null);
+  const focusTrapRef = useFocusTrap(true);
+
+  const handleEscKey = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleEscKey);
+    return () => document.removeEventListener("keydown", handleEscKey);
+  }, [handleEscKey]);
 
   // iframe内かどうかを検出
   useEffect(() => {
@@ -134,20 +145,21 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-lg bg-white shadow-2xl border-2 border-gray-300">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="barcode-title" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <Card className="w-full max-w-lg bg-white shadow-2xl border-2 border-gray-300" ref={focusTrapRef}>
         <CardHeader className="flex flex-row items-center justify-between bg-gray-200 rounded-t-lg pb-4">
-          <CardTitle className="flex items-center gap-2 text-gray-800">
-            <Camera className="w-5 h-5" />
+          <CardTitle id="barcode-title" className="flex items-center gap-2 text-gray-800">
+            <Camera className="w-5 h-5" aria-hidden="true" />
             バーコードスキャン
           </CardTitle>
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={onClose}
+            aria-label="閉じる"
             className="text-gray-600 hover:bg-gray-300 rounded-full"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </Button>
         </CardHeader>
         <CardContent className="bg-white p-6">

@@ -353,7 +353,7 @@ function StocktakingTab() {
                     />
                   </td>
                   <td className={`py-2 px-3 text-right font-bold ${
-                    diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-400'
+                    diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-500'
                   }`}>
                     {actual !== undefined ? (diff > 0 ? `+${diff}` : diff) : '-'}
                   </td>
@@ -508,7 +508,7 @@ function ForecastTab() {
                       {f.avg_daily_sales}/日
                     </span>
                   ) : (
-                    <span className="text-gray-400">-</span>
+                    <span className="text-gray-500">-</span>
                   )}
                 </td>
                 <td className="py-2 px-3 text-right">
@@ -521,7 +521,7 @@ function ForecastTab() {
                       約 {f.days_until_stockout} 日
                     </span>
                   ) : (
-                    <span className="text-gray-400">販売実績なし</span>
+                    <span className="text-gray-500">販売実績なし</span>
                   )}
                 </td>
                 <td className="py-2 px-3 text-center">
@@ -533,7 +533,7 @@ function ForecastTab() {
                   ) : f.avg_daily_sales > 0 ? (
                     <span className="text-green-600 text-xs">OK</span>
                   ) : (
-                    <span className="text-gray-400 text-xs">-</span>
+                    <span className="text-gray-500 text-xs">-</span>
                   )}
                 </td>
               </tr>

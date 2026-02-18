@@ -29,20 +29,22 @@ export function OfflineBanner() {
 
   return (
     <div
+      role="alert"
+      aria-live="assertive"
       className={`fixed top-0 left-0 right-0 z-[100] text-center text-sm font-medium py-2 px-4 transition-colors ${
         isOffline
-          ? "bg-amber-500 text-white"
-          : "bg-green-500 text-white"
+          ? "bg-amber-600 text-white"
+          : "bg-green-600 text-white"
       }`}
     >
       {isOffline ? (
         <span className="inline-flex items-center gap-2">
-          <WifiOff className="w-4 h-4" />
+          <WifiOff className="w-4 h-4" aria-hidden="true" />
           オフラインです - キャッシュデータを表示中
         </span>
       ) : (
         <span className="inline-flex items-center gap-2">
-          <Wifi className="w-4 h-4" />
+          <Wifi className="w-4 h-4" aria-hidden="true" />
           オンラインに復帰しました
         </span>
       )}

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Upload, FileText, AlertCircle, CheckCircle } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 interface ValidationError {
   row: number;
@@ -25,6 +26,16 @@ export function CsvUploadModal({ onClose, onSuccess }: CsvUploadModalProps) {
     message?: string;
     errors?: ValidationError[];
   } | null>(null);
+  const focusTrapRef = useFocusTrap(true);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,20 +95,21 @@ export function CsvUploadModal({ onClose, onSuccess }: CsvUploadModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-lg bg-white shadow-2xl border-2 border-gray-300">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="csv-upload-title" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <Card className="w-full max-w-lg bg-white shadow-2xl border-2 border-gray-300" ref={focusTrapRef}>
         <CardHeader className="flex flex-row items-center justify-between bg-gray-200 rounded-t-lg pb-4">
-          <CardTitle className="flex items-center gap-2 text-gray-800 font-bold">
-            <Upload className="w-5 h-5" />
+          <CardTitle id="csv-upload-title" className="flex items-center gap-2 text-gray-800 font-bold">
+            <Upload className="w-5 h-5" aria-hidden="true" />
             CSV一括インポート
           </CardTitle>
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={onClose}
+            aria-label="閉じる"
             className="text-gray-600 hover:bg-gray-300 rounded-full"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </Button>
         </CardHeader>
         <CardContent className="space-y-6 bg-white p-6">
@@ -158,7 +170,7 @@ export function CsvUploadModal({ onClose, onSuccess }: CsvUploadModalProps) {
                   <p className="text-sm text-gray-500 mt-2">
                     または、ファイルをドラッグ＆ドロップ
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-gray-500 mt-1">
                     対応形式: CSV (.csv)
                   </p>
                 </>

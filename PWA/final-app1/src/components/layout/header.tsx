@@ -96,24 +96,25 @@ export function Header() {
           {/* ロゴ */}
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-xl bg-gray-600 flex items-center justify-center shadow-md group-hover:bg-gray-700 transition-all">
-              <Boxes className="h-5 w-5 text-white" />
+              <Boxes className="h-5 w-5 text-white" aria-hidden="true" />
             </div>
             <div className="hidden sm:block">
               <span className="text-lg font-bold text-gray-800">
                 在庫管理
               </span>
-              <span className="text-xs text-gray-400 block -mt-0.5">Inventory System</span>
+              <span className="text-xs text-gray-500 block -mt-0.5">Inventory System</span>
             </div>
           </Link>
 
           {/* デスクトップナビゲーション */}
-          <nav className="hidden md:flex items-center bg-gray-100/80 rounded-2xl p-1.5">
+          <nav aria-label="メインナビゲーション" className="hidden md:flex items-center bg-gray-100/80 rounded-2xl p-1.5">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
                   key={item.name}
                   href={item.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={cn(
                     "flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200",
                     isActive
@@ -123,19 +124,19 @@ export function Header() {
                 >
                   <item.icon className={cn(
                     "h-4 w-4 mr-2 transition-colors",
-                    isActive ? "text-gray-700" : "text-gray-400"
-                  )} />
+                    isActive ? "text-gray-700" : "text-gray-500"
+                  )} aria-hidden="true" />
                   {item.name}
                 </Link>
               );
             })}
-            {/* 管理者のみ表示 */}
             {isAdmin && adminNavigation.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
                   key={item.name}
                   href={item.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={cn(
                     "flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200",
                     isActive
@@ -145,8 +146,8 @@ export function Header() {
                 >
                   <item.icon className={cn(
                     "h-4 w-4 mr-2 transition-colors",
-                    isActive ? "text-amber-700" : "text-amber-400"
-                  )} />
+                    isActive ? "text-amber-700" : "text-amber-500"
+                  )} aria-hidden="true" />
                   {item.name}
                 </Link>
               );
@@ -161,7 +162,7 @@ export function Header() {
                 {user.user_metadata?.avatar_url && (
                   <img
                     src={user.user_metadata.avatar_url}
-                    alt={user.email || "User"}
+                    alt={`${displayName || user.email || "ユーザー"}のアバター`}
                     className="h-8 w-8 rounded-xl ring-2 ring-white"
                   />
                 )}
@@ -183,13 +184,16 @@ export function Header() {
             {/* モバイルメニューボタン */}
             <button
               type="button"
+              aria-label={mobileMenuOpen ? "メニューを閉じる" : "メニューを開く"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-nav"
               className="md:hidden w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? (
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5" aria-hidden="true" />
               ) : (
-                <Menu className="h-5 w-5" />
+                <Menu className="h-5 w-5" aria-hidden="true" />
               )}
             </button>
           </div>
@@ -197,14 +201,15 @@ export function Header() {
 
         {/* モバイルナビゲーション */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-100 fade-in">
-            <nav className="flex flex-col gap-1">
+          <div id="mobile-nav" className="md:hidden py-4 border-t border-gray-100 fade-in" role="region" aria-label="モバイルメニュー">
+            <nav aria-label="モバイルナビゲーション" className="flex flex-col gap-1">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
+                    aria-current={isActive ? "page" : undefined}
                     className={cn(
                       "flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all",
                       isActive
@@ -215,19 +220,19 @@ export function Header() {
                   >
                     <item.icon className={cn(
                       "h-5 w-5 mr-3",
-                      isActive ? "text-gray-700" : "text-gray-400"
-                    )} />
+                      isActive ? "text-gray-700" : "text-gray-500"
+                    )} aria-hidden="true" />
                     {item.name}
                   </Link>
                 );
               })}
-              {/* 管理者のみ表示 */}
               {isAdmin && adminNavigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
+                    aria-current={isActive ? "page" : undefined}
                     className={cn(
                       "flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all",
                       isActive
@@ -238,19 +243,19 @@ export function Header() {
                   >
                     <item.icon className={cn(
                       "h-5 w-5 mr-3",
-                      isActive ? "text-amber-700" : "text-amber-400"
-                    )} />
+                      isActive ? "text-amber-700" : "text-amber-500"
+                    )} aria-hidden="true" />
                     {item.name}
                   </Link>
                 );
               })}
-              <hr className="my-2 border-gray-100" />
+              <hr className="my-2 border-gray-100" aria-hidden="true" />
               {user && (
                 <div className="flex items-center px-4 py-3 gap-3">
                   {user.user_metadata?.avatar_url && (
                     <img
                       src={user.user_metadata.avatar_url}
-                      alt={user.email || "User"}
+                      alt={`${displayName || user.email || "ユーザー"}のアバター`}
                       className="h-10 w-10 rounded-xl"
                     />
                   )}
@@ -268,7 +273,7 @@ export function Header() {
                 onClick={handleSignOut}
                 className="flex items-center px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 mt-1"
               >
-                <LogOut className="h-5 w-5 mr-3" />
+                <LogOut className="h-5 w-5 mr-3" aria-hidden="true" />
                 ログアウト
               </button>
             </nav>

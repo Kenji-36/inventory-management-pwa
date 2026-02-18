@@ -86,7 +86,7 @@ function getDefaultDates() {
 
 function ChangeBadge({ current, previous }: { current: number; previous: number }) {
   const pct = getChangePercent(current, previous);
-  if (pct === null) return <span className="text-xs text-gray-400">-</span>;
+  if (pct === null) return <span className="text-xs text-gray-500">-</span>;
 
   if (pct > 0) {
     return (
@@ -176,7 +176,7 @@ function SummaryCards({ data, comparison }: { data: PeriodSummary; comparison: P
             {comparison && card.prevValue !== undefined && (
               <div className="mt-1 flex items-center gap-2">
                 <ChangeBadge current={card.value} previous={card.prevValue} />
-                <span className="text-xs text-gray-400">vs {card.format(card.prevValue)}</span>
+                <span className="text-xs text-gray-500">vs {card.format(card.prevValue)}</span>
               </div>
             )}
           </CardContent>
@@ -205,7 +205,7 @@ function SalesChart({ data }: { data: DailySales[] }) {
       </CardHeader>
       <CardContent>
         {chartData.length === 0 ? (
-          <p className="text-center text-gray-400 py-8">データがありません</p>
+          <p className="text-center text-gray-500 py-8">データがありません</p>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
@@ -260,7 +260,7 @@ function ProductSalesTable({
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
-          <p className="text-center text-gray-400 py-8">データがありません</p>
+          <p className="text-center text-gray-500 py-8">データがありません</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -286,7 +286,7 @@ function ProductSalesTable({
               <tbody>
                 {data.map((p, idx) => (
                   <tr key={p.productId} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-2 px-3 text-gray-400 font-medium">{idx + 1}</td>
+                    <td className="py-2 px-3 text-gray-500 font-medium">{idx + 1}</td>
                     <td className="py-2 px-3 font-medium text-gray-900 max-w-[200px] truncate">{p.productName}</td>
                     <td className="py-2 px-3 text-right text-gray-700">{p.totalQuantity}</td>
                     <td className="py-2 px-3 text-right font-semibold text-gray-900">{formatCurrency(p.totalInclTax)}</td>
@@ -340,7 +340,7 @@ function ComparisonChart({
       </CardHeader>
       <CardContent>
         {chartData.length === 0 ? (
-          <p className="text-center text-gray-400 py-8">比較データがありません</p>
+          <p className="text-center text-gray-500 py-8">比較データがありません</p>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>

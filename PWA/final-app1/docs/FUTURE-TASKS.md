@@ -274,15 +274,27 @@ jobs:
 
 ---
 
-#### 12. アクセシビリティ対応
+#### 12. アクセシビリティ対応 ✅ 完了
 **目的**: すべてのユーザーが使いやすいシステム
 
 **タスク**:
-- [ ] WCAG 2.1 AA準拠
-- [ ] スクリーンリーダー対応
-- [ ] キーボードナビゲーション対応
-- [ ] カラーコントラスト比の改善
-- [ ] aria属性の追加
+- [x] WCAG 2.1 AA準拠
+- [x] スクリーンリーダー対応
+- [x] キーボードナビゲーション対応
+- [x] カラーコントラスト比の改善
+- [x] aria属性の追加
+
+**実装内容**:
+- aria属性: ナビゲーション（`aria-label`, `aria-current`）、モーダル（`role="dialog"`, `aria-modal`, `aria-labelledby`）、通知ベル（`aria-expanded`, `aria-haspopup`）、ボタン（`aria-label`）、アイコン（`aria-hidden`）
+- キーボードナビゲーション: スキップリンク（`skip-link.tsx`）、フォーカストラップ（`useFocusTrap`フック）、Escapeキーでモーダル/ドロップダウンを閉じる
+- スクリーンリーダー: ライブリージョン（`role="alert"`, `aria-live`）、セマンティックHTML（`<nav>`, `<main>`, `role="list"`）、フォームラベル（`htmlFor`/`id`連携）、`aria-describedby`
+- カラーコントラスト: `text-gray-400`（3.0:1）→ `text-gray-500`（4.6:1）以上に改善、背景色の濃度調整
+- WCAG 2.1 AA: フォーカスインジケーター（`:focus-visible`）、`prefers-reduced-motion`対応、44pxタッチターゲット、`autoComplete`属性
+
+**新規ファイル**:
+- `src/hooks/useFocusTrap.ts` - モーダル用フォーカストラップフック
+- `src/components/layout/skip-link.tsx` - スキップリンクコンポーネント
+- `src/components/ui/sr-only-live.tsx` - スクリーンリーダー用ライブアナウンサー
 
 **推定工数**: 2-3日
 
@@ -504,9 +516,9 @@ jobs:
 | 9 | 高度な検索機能 | 🟢 低 | [ ] 未着手 |
 | 10 | サードパーティ連携 | 🟢 低 | [ ] 未着手 |
 | 11 | パフォーマンス最適化 | 🟢 低 | [ ] 未着手 |
-| 12 | アクセシビリティ対応 | 🟢 低 | [ ] 未着手 |
+| 12 | アクセシビリティ対応 | 🟢 低 | [x] ✅ 完了 |
 
-**完了率**: 7 / 12 タスク (58%)
+**完了率**: 8 / 12 タスク (67%)
 
 ---
 

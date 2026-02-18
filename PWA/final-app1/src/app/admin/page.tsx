@@ -310,7 +310,7 @@ function AuditLogViewer() {
                       </span>
                     )}
                     {log.target_id && (
-                      <span className="text-xs text-gray-400 ml-1">#{log.target_id}</span>
+                      <span className="text-xs text-gray-500 ml-1">#{log.target_id}</span>
                     )}
                   </td>
                   <td className="py-3 px-4 text-gray-500 text-xs max-w-xs truncate">

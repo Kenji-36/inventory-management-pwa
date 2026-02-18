@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Plus, Minus, Save } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import type { ProductWithStock } from "@/types";
 
 interface StockEditModalProps {
@@ -20,6 +21,16 @@ export function StockEditModal({
 }: StockEditModalProps) {
   const [quantity, setQuantity] = useState(product.stock?.在庫数 || 0);
   const [isLoading, setIsLoading] = useState(false);
+  const focusTrapRef = useFocusTrap(true);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -38,17 +49,18 @@ export function StockEditModal({
   const decrement = () => setQuantity((q) => Math.max(0, q - 1));
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md bg-white shadow-2xl border-2 border-gray-300">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="stock-edit-title" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <Card className="w-full max-w-md bg-white shadow-2xl border-2 border-gray-300" ref={focusTrapRef}>
         <CardHeader className="flex flex-row items-center justify-between bg-gray-200 rounded-t-lg pb-4">
-          <CardTitle className="text-gray-800 font-bold">在庫数を編集</CardTitle>
+          <CardTitle id="stock-edit-title" className="text-gray-800 font-bold">在庫数を編集</CardTitle>
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={onClose}
+            aria-label="閉じる"
             className="text-gray-600 hover:bg-gray-300 rounded-full"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </Button>
         </CardHeader>
         <CardContent className="space-y-6 bg-white p-6">
@@ -83,9 +95,10 @@ export function StockEditModal({
                 size="icon"
                 onClick={decrement}
                 disabled={quantity <= 0}
+                aria-label="在庫数を1つ減らす"
                 className="h-12 w-12 rounded-full border-2 border-gray-300 hover:border-gray-500 hover:bg-gray-100 disabled:opacity-30"
               >
-                <Minus className="w-5 h-5" />
+                <Minus className="w-5 h-5" aria-hidden="true" />
               </Button>
               <Input
                 id="stock-quantity"
@@ -102,9 +115,10 @@ export function StockEditModal({
                 variant="outline" 
                 size="icon" 
                 onClick={increment}
+                aria-label="在庫数を1つ増やす"
                 className="h-12 w-12 rounded-full border-2 border-gray-300 hover:border-gray-500 hover:bg-gray-100"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-5 h-5" aria-hidden="true" />
               </Button>
             </div>
             <div className="bg-gray-100 border border-gray-300 rounded-lg p-3 mt-4">

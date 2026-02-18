@@ -122,7 +122,7 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center space-y-2">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mb-2">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mb-2" aria-hidden="true">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
@@ -137,14 +137,14 @@ export default function LoginPage() {
         <CardContent className="space-y-4">
           {/* エラー・成功メッセージ */}
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <div role="alert" className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
               <span>{error}</span>
             </div>
           )}
           {success && (
-            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <div role="status" className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
               <span>{success}</span>
             </div>
           )}
@@ -153,15 +153,17 @@ export default function LoginPage() {
           <form onSubmit={mode === "login" ? handleEmailLogin : handleSignup} className="space-y-4">
             {mode === "signup" && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">名前</label>
+                <label htmlFor="signup-name" className="text-sm font-medium text-gray-700">名前</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" aria-hidden="true" />
                   <Input
+                    id="signup-name"
                     type="text"
                     placeholder="山田 太郎"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="pl-10"
+                    autoComplete="name"
                     required
                   />
                 </div>
@@ -169,36 +171,41 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">メールアドレス</label>
+              <label htmlFor="login-email" className="text-sm font-medium text-gray-700">メールアドレス</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" aria-hidden="true" />
                 <Input
+                  id="login-email"
                   type="email"
                   placeholder="example@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
+                  autoComplete="email"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">パスワード</label>
+              <label htmlFor="login-password" className="text-sm font-medium text-gray-700">パスワード</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" aria-hidden="true" />
                 <Input
+                  id="login-password"
                   type="password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10"
                   minLength={6}
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  aria-describedby={mode === "signup" ? "password-hint" : undefined}
                   required
                 />
               </div>
               {mode === "signup" && (
-                <p className="text-xs text-gray-500">6文字以上で入力してください</p>
+                <p id="password-hint" className="text-xs text-gray-600">6文字以上で入力してください</p>
               )}
             </div>
 
@@ -239,7 +246,7 @@ export default function LoginPage() {
             size="lg"
             disabled={isLoading}
           >
-            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 fill="currentColor"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

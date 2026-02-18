@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Package, AlertCircle, Calendar, ShoppingBag, Receipt } from "lucide-react";
 import Image from "next/image";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import type { Order, OrderWithDetails } from "@/types";
 
 interface OrderDetailModalProps {
@@ -16,6 +17,16 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
   const [details, setDetails] = useState<OrderWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const focusTrapRef = useFocusTrap(true);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -42,17 +53,17 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
   }, [order.注文ID]);
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in">
-      <Card className="w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border-0 shadow-2xl">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in" role="dialog" aria-modal="true" aria-labelledby="order-detail-title" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <Card className="w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border-0 shadow-2xl" ref={focusTrapRef}>
         {/* ヘッダー */}
         <CardHeader className="flex-shrink-0 bg-gradient-to-r from-gray-700 to-gray-800 text-white border-b-0 pb-6">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center">
-                <Receipt className="w-7 h-7 text-white" />
+                <Receipt className="w-7 h-7 text-white" aria-hidden="true" />
               </div>
               <div>
-                <CardTitle className="text-2xl text-white mb-1">
+                <CardTitle id="order-detail-title" className="text-2xl text-white mb-1">
                   注文詳細 #{order.注文ID}
                 </CardTitle>
                 <div className="flex items-center gap-3 text-white/70 text-sm">
@@ -71,9 +82,10 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
               variant="ghost" 
               size="icon" 
               onClick={onClose}
+              aria-label="閉じる"
               className="text-white hover:bg-white/10 rounded-xl"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </Button>
           </div>
         </CardHeader>
