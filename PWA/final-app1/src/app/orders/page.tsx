@@ -15,8 +15,10 @@ import {
   ArrowUpRight
 } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { OrderList } from "@/components/orders/order-list";
-import { OrderDetailModal } from "@/components/orders/order-detail-modal";
+
+const OrderDetailModal = dynamic(() => import("@/components/orders/order-detail-modal").then(m => ({ default: m.OrderDetailModal })), { ssr: false });
 import type { Order } from "@/types";
 
 export default function OrdersPage() {

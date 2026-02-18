@@ -70,10 +70,10 @@ export async function GET() {
       { data: ordersData, error: ordersError },
       { data: detailsData, error: detailsError },
     ] = await Promise.all([
-      supabaseServer.from('products').select('*'),
-      supabaseServer.from('stock').select('*'),
-      supabaseServer.from('orders').select('*'),
-      supabaseServer.from('order_details').select('*'),
+      supabaseServer.from('products').select('id, name, size, product_code, jan_code, price_excluding_tax, price_including_tax'),
+      supabaseServer.from('stock').select('id, product_id, quantity'),
+      supabaseServer.from('orders').select('id, item_count, total_price_excluding_tax, total_price_including_tax, order_date'),
+      supabaseServer.from('order_details').select('id, order_id, product_id, quantity, subtotal_including_tax'),
     ]);
 
     if (productsError || stockError || ordersError || detailsError) {

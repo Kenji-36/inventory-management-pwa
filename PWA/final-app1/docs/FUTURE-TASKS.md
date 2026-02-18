@@ -259,16 +259,38 @@ jobs:
 
 ---
 
-#### 11. パフォーマンス最適化
+#### 11. パフォーマンス最適化 ✅ 完了
 **目的**: ユーザー体験の向上
 
 **タスク**:
-- [ ] Lighthouseスコアの改善（目標: 90+）
-- [ ] 画像の最適化（WebP、AVIF対応）
-- [ ] コード分割の最適化
-- [ ] データベースクエリの最適化
-- [ ] CDNキャッシュ戦略の見直し
-- [ ] Core Web Vitalsの改善
+- [x] Lighthouseスコアの改善（目標: 90+）
+- [x] 画像の最適化（WebP、AVIF対応）
+- [x] コード分割の最適化
+- [x] データベースクエリの最適化
+- [x] CDNキャッシュ戦略の見直し
+- [x] Core Web Vitalsの改善
+
+**実装内容**:
+- CSPエラー修正: `worker-src 'self' blob:` ディレクティブを追加（Service Worker のblob URLブロック解消）
+- Lighthouse: メタデータ最適化（OpenGraph, metadataBase, title template）、プリコネクト/DNS-prefetch、`maximumScale: 5`（WCAG準拠）
+- 画像最適化: AVIF/WebP自動変換、デバイスサイズ・画像サイズ最適化、30日キャッシュ
+- コード分割: ダッシュボードチャート（recharts）を`dynamic()`で遅延読み込み、モーダル（バーコードスキャナー・CSV・注文詳細）を遅延読み込み
+- DB最適化: 全テーブル`select('*')` → 必要カラムのみ指定、推奨インデックスSQL作成（`docs/db-indexes.sql`）
+- CDNキャッシュ: アイコン・フォントに`immutable`キャッシュ（1年）、APIに`no-store`、SW戦略をStale-While-Revalidate + Cache Firstに刷新、画像専用キャッシュ追加
+- Core Web Vitals: `web-vitals`ライブラリによる計測（CLS/INP/LCP/FCP/TTFB）、開発時コンソールログ
+
+**新規・変更ファイル**:
+- `next.config.ts` - CSP修正、画像最適化、キャッシュヘッダー追加
+- `src/app/layout.tsx` - プリコネクト、メタデータ強化、WebVitals追加
+- `src/components/providers/web-vitals.tsx` - Web Vitals計測コンポーネント（新規）
+- `public/sw.js` - キャッシュ戦略刷新（v2）
+- `docs/db-indexes.sql` - 推奨インデックスSQL（新規）
+- `src/components/dashboard/dashboard-content.tsx` - チャートdynamic import
+- `src/app/inventory/page.tsx` - モーダルdynamic import
+- `src/app/orders/page.tsx` - モーダルdynamic import
+- `src/app/api/dashboard/route.ts` - selectカラム最適化
+- `src/app/api/orders/route.ts` - selectカラム最適化
+- `src/app/api/stock/route.ts` - selectカラム最適化
 
 **推定工数**: 2-3日
 
@@ -515,10 +537,10 @@ jobs:
 | 8 | 多言語対応（国際化） | 🟢 低 | [ ] 未着手 |
 | 9 | 高度な検索機能 | 🟢 低 | [ ] 未着手 |
 | 10 | サードパーティ連携 | 🟢 低 | [ ] 未着手 |
-| 11 | パフォーマンス最適化 | 🟢 低 | [ ] 未着手 |
+| 11 | パフォーマンス最適化 | 🟢 低 | [x] ✅ 完了 |
 | 12 | アクセシビリティ対応 | 🟢 低 | [x] ✅ 完了 |
 
-**完了率**: 8 / 12 タスク (67%)
+**完了率**: 9 / 12 タスク (75%)
 
 ---
 

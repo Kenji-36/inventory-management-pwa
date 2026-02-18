@@ -25,8 +25,11 @@ const nextConfig: NextConfig = {
   //   instrumentationHook: true,
   // },
 
-  // 外部画像の許可（Supabase Storage）- 環境変数から動的に取得
   images: {
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       {
         protocol: 'https',
@@ -81,6 +84,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.sentry.io",
               "style-src 'self' 'unsafe-inline'",
+              "worker-src 'self' blob:",
               `img-src 'self' https://${supabaseHost} data: blob:`,
               `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://accounts.google.com https://www.googleapis.com https://*.ingest.us.sentry.io https://*.sentry.io`,
               "font-src 'self' data:",
@@ -94,7 +98,33 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // APIルートにCORS制限を設定
+        source: "/icons/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/fonts/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/manifest.json",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400",
+          },
+        ],
+      },
+      {
         source: "/api/:path*",
         headers: [
           {
@@ -112,6 +142,10 @@ const nextConfig: NextConfig = {
           {
             key: "Access-Control-Max-Age",
             value: "86400",
+          },
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate",
           },
         ],
       },

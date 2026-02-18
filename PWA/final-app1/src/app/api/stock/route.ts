@@ -24,7 +24,7 @@ export async function GET() {
     // Supabaseから在庫情報を取得
     const { data: stockData, error: stockError } = await supabaseServer
       .from('stock')
-      .select('*')
+      .select('id, product_id, quantity, last_stocked_date, created_at, updated_at')
       .order('id', { ascending: true });
 
     if (stockError) {

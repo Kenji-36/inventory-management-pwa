@@ -7,10 +7,12 @@
  * - バックグラウンド同期
  */
 
-const CACHE_NAME = 'inventory-management-v1';
-const RUNTIME_CACHE = 'runtime-cache-v1';
+const CACHE_NAME = 'inventory-management-v2';
+const RUNTIME_CACHE = 'runtime-cache-v2';
+const IMAGE_CACHE = 'image-cache-v1';
+const MAX_RUNTIME_CACHE_ITEMS = 50;
+const MAX_IMAGE_CACHE_ITEMS = 30;
 
-// キャッシュするリソース
 const STATIC_ASSETS = [
   '/',
   '/offline',
@@ -39,15 +41,16 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activating Service Worker...');
   
+  const validCaches = [CACHE_NAME, RUNTIME_CACHE, IMAGE_CACHE];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
+        cacheNames
+          .filter((cacheName) => !validCaches.includes(cacheName))
+          .map((cacheName) => {
             console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
-          }
-        })
+          })
       );
     })
   );
@@ -56,72 +59,102 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// キャッシュサイズ制限: 古いエントリを削除
+async function trimCache(cacheName, maxItems) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  if (keys.length > maxItems) {
+    await cache.delete(keys[0]);
+    return trimCache(cacheName, maxItems);
+  }
+}
+
 // フェッチ時
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-
-  // 外部リソース（Supabase等）はキャッシュしない
-  if (url.origin !== self.location.origin) {
-    return;
-  }
-
-  // APIリクエストの処理
-  if (url.pathname.startsWith('/api/')) {
-    // POSTリクエストはキャッシュしない（書き込み操作のため）
-    if (request.method !== 'GET') {
-      return; // Service Workerを通さず、直接ネットワークリクエストを実行
-    }
-
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // 成功したGETレスポンスのみキャッシュ
-          if (response.ok) {
-            const responseClone = response.clone();
-            caches.open(RUNTIME_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // オフライン時はキャッシュから返す
-          return caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-            // キャッシュにもない場合はオフラインページ
-            return caches.match('/offline');
-          });
-        })
-    );
-    return;
-  }
 
   // GETリクエスト以外はキャッシュしない
   if (request.method !== 'GET') {
     return;
   }
 
-  // 通常のページリクエスト: Network First戦略
+  // 外部リソース（Supabase Storage の画像）: Cache First
+  if (url.origin !== self.location.origin) {
+    if (request.destination === 'image') {
+      event.respondWith(
+        caches.match(request).then((cached) => {
+          if (cached) return cached;
+          return fetch(request).then((response) => {
+            if (response.ok) {
+              const clone = response.clone();
+              caches.open(IMAGE_CACHE).then((cache) => {
+                cache.put(request, clone);
+                trimCache(IMAGE_CACHE, MAX_IMAGE_CACHE_ITEMS);
+              });
+            }
+            return response;
+          }).catch(() => new Response('', { status: 408 }));
+        })
+      );
+      return;
+    }
+    return;
+  }
+
+  // APIリクエスト: Stale-While-Revalidate
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const fetchPromise = fetch(request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(request, clone);
+              trimCache(RUNTIME_CACHE, MAX_RUNTIME_CACHE_ITEMS);
+            });
+          }
+          return response;
+        }).catch(() => {
+          if (cached) return cached;
+          return caches.match('/offline');
+        });
+        return cached || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // 静的アセット（アイコン、フォント）: Cache First
+  if (url.pathname.startsWith('/icons/') || url.pathname.startsWith('/fonts/')) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        return cached || fetch(request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // 通常のページリクエスト: Network First
   event.respondWith(
     fetch(request)
       .then((response) => {
-        // 成功したレスポンスをキャッシュ
-        const responseClone = response.clone();
+        const clone = response.clone();
         caches.open(RUNTIME_CACHE).then((cache) => {
-          cache.put(request, responseClone);
+          cache.put(request, clone);
+          trimCache(RUNTIME_CACHE, MAX_RUNTIME_CACHE_ITEMS);
         });
         return response;
       })
       .catch(() => {
-        // ネットワークエラー時はキャッシュから返す
-        return caches.match(request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          // キャッシュにもない場合はオフラインページ
+        return caches.match(request).then((cached) => {
+          if (cached) return cached;
           if (request.mode === 'navigate') {
             return caches.match('/offline');
           }

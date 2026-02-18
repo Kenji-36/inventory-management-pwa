@@ -24,7 +24,7 @@ export async function GET() {
     // Supabaseから注文情報を取得
     const { data: ordersData, error: ordersError } = await supabaseServer
       .from('orders')
-      .select('*')
+      .select('id, item_count, total_price_excluding_tax, total_price_including_tax, order_date')
       .order('order_date', { ascending: false });
 
     if (ordersError) {

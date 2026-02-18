@@ -17,9 +17,22 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { SalesChart } from "./sales-chart";
-import { ProductRanking } from "./product-ranking";
-import { StockAlerts } from "./stock-alerts";
+import dynamic from "next/dynamic";
+
+const SalesChart = dynamic(() => import("./sales-chart").then(m => ({ default: m.SalesChart })), {
+  loading: () => <div className="h-64 shimmer rounded-xl" />,
+  ssr: false,
+});
+
+const ProductRanking = dynamic(() => import("./product-ranking").then(m => ({ default: m.ProductRanking })), {
+  loading: () => <div className="h-64 shimmer rounded-xl" />,
+  ssr: false,
+});
+
+const StockAlerts = dynamic(() => import("./stock-alerts").then(m => ({ default: m.StockAlerts })), {
+  loading: () => <div className="h-48 shimmer rounded-xl" />,
+  ssr: false,
+});
 import { cn } from "@/lib/utils";
 
 interface DashboardData {

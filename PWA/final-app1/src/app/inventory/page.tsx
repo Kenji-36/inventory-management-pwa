@@ -21,10 +21,12 @@ import {
   ClipboardCheck
 } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ProductList } from "@/components/inventory/product-list";
-import { StockEditModal } from "@/components/inventory/stock-edit-modal";
-import { BarcodeScanner } from "@/components/inventory/barcode-scanner";
-import { CsvUploadModal } from "@/components/inventory/csv-upload-modal";
+
+const StockEditModal = dynamic(() => import("@/components/inventory/stock-edit-modal").then(m => ({ default: m.StockEditModal })), { ssr: false });
+const BarcodeScanner = dynamic(() => import("@/components/inventory/barcode-scanner").then(m => ({ default: m.BarcodeScanner })), { ssr: false });
+const CsvUploadModal = dynamic(() => import("@/components/inventory/csv-upload-modal").then(m => ({ default: m.CsvUploadModal })), { ssr: false });
 import type { ProductGroup, ProductWithStock } from "@/types";
 
 export default function InventoryPage() {
