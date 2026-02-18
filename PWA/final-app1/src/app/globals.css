@@ -221,3 +221,24 @@ body {
   background: hsl(0 84% 60% / 0.1);
   color: hsl(0 84% 50%);
 }
+
+/* Safe area for bottom navigation (iPhone notch) */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Touch-friendly tap targets */
+@media (hover: none) and (pointer: coarse) {
+  button, a, [role="button"] {
+    min-height: 44px;
+  }
+}
+
+/* Tablet 2-column layout utility */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tablet-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+}

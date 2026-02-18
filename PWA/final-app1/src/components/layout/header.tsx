@@ -19,6 +19,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
+import { NotificationBell } from "./notification-bell";
 
 const navigation = [
   { name: "ダッシュボード", href: "/", icon: LayoutDashboard },
@@ -153,7 +154,8 @@ export function Header() {
           </nav>
 
           {/* ユーザーメニュー */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {user && <NotificationBell />}
             {user && (
               <div className="hidden sm:flex items-center gap-3 bg-gray-100/80 rounded-2xl pl-2 pr-4 py-1.5">
                 {user.user_metadata?.avatar_url && (
